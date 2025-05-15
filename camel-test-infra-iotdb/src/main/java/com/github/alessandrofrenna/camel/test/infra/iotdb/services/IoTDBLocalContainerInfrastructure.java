@@ -11,60 +11,56 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @InfraService(
-    service = IoTDBInfraService.class,
-    description = "IoTDB is a database used to efficiently store data from iot devices",
-    serviceAlias = {
-      "iotdb",
-      "iotdb-service",
-    })
-public class IoTDBLocalContainerInfrastructure
-    implements IoTDBInfraService, ContainerService<IoTDBContainer> {
-  private static final Logger LOG =
-      LoggerFactory.getLogger(IoTDBLocalContainerInfrastructure.class);
+        service = IoTDBInfraService.class,
+        description = "IoTDB is a database used to efficiently store data from iot devices",
+        serviceAlias = {"iotdb", "iotdb-service"})
+public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, ContainerService<IoTDBContainer> {
 
-  private final IoTDBContainer container;
+    private static final Logger LOG = LoggerFactory.getLogger(IoTDBLocalContainerInfrastructure.class);
 
-  public IoTDBLocalContainerInfrastructure() {
-    container = new IoTDBContainer();
-  }
+    private final IoTDBContainer container;
 
-  public IoTDBLocalContainerInfrastructure(String imageName) {
-    container = IoTDBContainer.initContainer(imageName, IoTDBContainer.CONTAINER_NAME);
-  }
+    public IoTDBLocalContainerInfrastructure() {
+        container = new IoTDBContainer();
+    }
 
-  @Override
-  public void registerProperties() {
-    System.setProperty(IOTDB_SERVICE_ADDRESS, getServiceAddress());
-    System.setProperty(IOTDB_HOST, host());
-    System.setProperty(IOTDB_PORT, String.valueOf(port()));
-  }
+    public IoTDBLocalContainerInfrastructure(String imageName) {
+        container = IoTDBContainer.initContainer(imageName, IoTDBContainer.CONTAINER_NAME);
+    }
 
-  @Override
-  public void initialize() {
-    LOG.info("Trying to start IoTDB container");
-    container.start();
-    registerProperties();
-    LOG.info("IoTDB instance running at {}", getServiceAddress());
-  }
+    @Override
+    public void registerProperties() {
+        System.setProperty(IOTDB_SERVICE_ADDRESS, getServiceAddress());
+        System.setProperty(IOTDB_HOST, host());
+        System.setProperty(IOTDB_PORT, String.valueOf(port()));
+    }
 
-  @Override
-  public void shutdown() {
-    LOG.info("Stopping IoTDB container");
-    container.stop();
-  }
+    @Override
+    public void initialize() {
+        LOG.info("Trying to start IoTDB container");
+        container.start();
+        registerProperties();
+        LOG.info("IoTDB instance running at {}", getServiceAddress());
+    }
 
-  @Override
-  public IoTDBContainer getContainer() {
-    return container;
-  }
+    @Override
+    public void shutdown() {
+        LOG.info("Stopping IoTDB container");
+        container.stop();
+    }
 
-  @Override
-  public String host() {
-    return container.getHost();
-  }
+    @Override
+    public IoTDBContainer getContainer() {
+        return container;
+    }
 
-  @Override
-  public int port() {
-    return container.getMappedPort(DEFAULT_PORT);
-  }
+    @Override
+    public String host() {
+        return container.getHost();
+    }
+
+    @Override
+    public int port() {
+        return container.getMappedPort(DEFAULT_PORT);
+    }
 }

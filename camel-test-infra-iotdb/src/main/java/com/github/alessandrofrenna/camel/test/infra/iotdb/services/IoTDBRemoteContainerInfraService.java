@@ -5,34 +5,35 @@ import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBPro
 import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_PORT;
 
 public class IoTDBRemoteContainerInfraService implements IoTDBInfraService {
-  @Override
-  public String host() {
-    return System.getProperty(IOTDB_HOST);
-  }
 
-  @Override
-  public int port() {
-    String port = System.getProperty(IOTDB_PORT);
-
-    if (port == null) {
-      return DEFAULT_PORT;
+    @Override
+    public String host() {
+        return System.getProperty(IOTDB_HOST);
     }
 
-    return Integer.parseInt(port);
-  }
+    @Override
+    public int port() {
+        String port = System.getProperty(IOTDB_PORT);
 
-  @Override
-  public void registerProperties() {
-    // NO-OP
-  }
+        if (port == null) {
+            return DEFAULT_PORT;
+        }
 
-  @Override
-  public void initialize() {
-    registerProperties();
-  }
+        return Integer.parseInt(port);
+    }
 
-  @Override
-  public void shutdown() {
-    // NO-OP
-  }
+    @Override
+    public void registerProperties() {
+        // NO-OP
+    }
+
+    @Override
+    public void initialize() {
+        registerProperties();
+    }
+
+    @Override
+    public void shutdown() {
+        // NO-OP
+    }
 }

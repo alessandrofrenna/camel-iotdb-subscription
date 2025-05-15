@@ -17,56 +17,54 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class IoTDBSubscriptionComponentTest extends CamelTestSupport {
 
-  @RegisterExtension public static IoTDBService service = IoTDBServiceFactory.createService();
+    @RegisterExtension
+    public static IoTDBService service = IoTDBServiceFactory.createService();
 
-  @AfterEach
-  void shutdownService() {
-    service.shutdown();
-  }
-
-  @Override
-  protected CamelContext createCamelContext() throws Exception {
-    CamelContext context = super.createCamelContext();
-    IoTDBSubscriptionComponent comp = new IoTDBSubscriptionComponent();
-    context.addComponent("iotdb-subscription", comp);
-    return context;
-  }
-
-  @Override
-  protected RouteBuilder createRouteBuilder() throws Exception {
-    return new RouteBuilder() {
-      public void configure() {
-        from("iotdb-subscription:rain_topic?groupId=test_group&consumerId=test_consumer")
-            .to("mock:result");
-      }
-    };
-  }
-
-  // @Test
-  void testCreateAndConsume() throws Exception {
-    // template.sendBody("iotdb-subscription:rain_topic?action=create", null);
-
-    // 5)  Insert a record directly via IoTDB Session
-    try (Session session = new Session("localhost", 6667, "root", "root")) {
-      session.open();
-      session.setStorageGroup("root.test");
-      session.createTimeseries(
-          "root.test.demo_device.rain",
-          TSDataType.DOUBLE,
-          TSEncoding.GORILLA_V1,
-          CompressionType.ZSTD);
-      // insert one data point at timestamp=1, value=42
-      session.insertRecord(
-          "root.test.demo_device",
-          Instant.now().toEpochMilli(),
-          List.of("rain"),
-          List.of(TSDataType.DOUBLE),
-          List.of(10));
+    @AfterEach
+    void shutdownService() {
+        service.shutdown();
     }
 
-    // 6)  Assert that the consumer route got at least one Exchange
-    MockEndpoint mock = getMockEndpoint("mock:result");
-    mock.expectedMinimumMessageCount(1);
-    mock.assertIsSatisfied(10_000);
-  }
+    @Override
+    protected CamelContext createCamelContext() throws Exception {
+        CamelContext context = super.createCamelContext();
+        IoTDBSubscriptionComponent comp = new IoTDBSubscriptionComponent();
+        context.addComponent("iotdb-subscription", comp);
+        return context;
+    }
+
+    @Override
+    protected RouteBuilder createRouteBuilder() throws Exception {
+        return new RouteBuilder() {
+            public void configure() {
+                from("iotdb-subscription:rain_topic?groupId=test_group&consumerId=test_consumer")
+                        .to("mock:result");
+            }
+        };
+    }
+
+    // @Test
+    void testCreateAndConsume() throws Exception {
+        // template.sendBody("iotdb-subscription:rain_topic?action=create", null);
+
+        // 5)  Insert a record directly via IoTDB Session
+        try (Session session = new Session("localhost", 6667, "root", "root")) {
+            session.open();
+            session.setStorageGroup("root.test");
+            session.createTimeseries(
+                    "root.test.demo_device.rain", TSDataType.DOUBLE, TSEncoding.GORILLA_V1, CompressionType.ZSTD);
+            // insert one data point at timestamp=1, value=42
+            session.insertRecord(
+                    "root.test.demo_device",
+                    Instant.now().toEpochMilli(),
+                    List.of("rain"),
+                    List.of(TSDataType.DOUBLE),
+                    List.of(10));
+        }
+
+        // 6)  Assert that the consumer route got at least one Exchange
+        MockEndpoint mock = getMockEndpoint("mock:result");
+        mock.expectedMinimumMessageCount(1);
+        mock.assertIsSatisfied(10_000);
+    }
 }
