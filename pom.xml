@@ -59,17 +59,18 @@
                 <include>**/test/java/**/*.java</include>
               </includes>
               <!-- Rules -->
-              <googleJavaFormat>
-                <version>1.27.0</version>
-                <style>GOOGLE</style>
-              </googleJavaFormat>
+              <trimTrailingWhitespace />
+              <endWithNewline />
               <removeUnusedImports />
               <indent>
                 <spaces>true</spaces>
                 <spacesPerTab>4</spacesPerTab>
               </indent>
-              <trimTrailingWhitespace />
-              <endWithNewline />
+              <palantirJavaFormat>
+                <version>2.66.0</version>
+                <style>PALANTIR</style>
+                <formatJavadoc>true</formatJavadoc>
+              </palantirJavaFormat>
               <!-- Rules -->
             </java>
           </configuration>
