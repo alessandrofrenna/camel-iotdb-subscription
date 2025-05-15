@@ -123,26 +123,26 @@ public class IoTDBTestSupport extends CamelTestSupport {
         service.shutdown();
     }
 
-//    void testCreateAndConsume() throws Exception {
-//        // 5)  Insert a record directly via IoTDB Session
-//                try (Session session = new Session("localhost", 6667, "root", "root")) {
-//                    session.open();
-//                    session.setStorageGroup("root.test");
-//                    session.createTimeseries(
-//                            "root.test.demo_device.rain", TSDataType.DOUBLE, TSEncoding.GORILLA_V1,
-//         CompressionType.ZSTD);
-//
-//                    session.insertRecord(
-//                            "root.test.demo_device",
-//                            Instant.now().toEpochMilli(),
-//                            List.of("rain"),
-//                            List.of(TSDataType.DOUBLE),
-//                            List.of(10));
-//                }
-//
-//        // 6)  Assert that the consumer route got at least one Exchange
-//         MockEndpoint mock = getMockEndpoint("mock:result");
-//         mock.expectedMinimumMessageCount(1);
-//         mock.assertIsSatisfied(10_000);
-//    }
+    //    void testCreateAndConsume() throws Exception {
+    //        // 5)  Insert a record directly via IoTDB Session
+    //                try (Session session = new Session("localhost", 6667, "root", "root")) {
+    //                    session.open();
+    //                    session.setStorageGroup("root.test");
+    //                    session.createTimeseries(
+    //                            "root.test.demo_device.rain", TSDataType.DOUBLE, TSEncoding.GORILLA_V1,
+    //         CompressionType.ZSTD);
+    //
+    //                    session.insertRecord(
+    //                            "root.test.demo_device",
+    //                            Instant.now().toEpochMilli(),
+    //                            List.of("rain"),
+    //                            List.of(TSDataType.DOUBLE),
+    //                            List.of(10));
+    //                }
+    //
+    //        // 6)  Assert that the consumer route got at least one Exchange
+    //         MockEndpoint mock = getMockEndpoint("mock:result");
+    //         mock.expectedMinimumMessageCount(1);
+    //         mock.assertIsSatisfied(10_000);
+    //    }
 }
