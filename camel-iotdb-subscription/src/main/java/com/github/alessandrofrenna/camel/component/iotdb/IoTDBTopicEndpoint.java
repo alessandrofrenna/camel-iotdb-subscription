@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
 import org.apache.camel.Category;
@@ -11,7 +27,10 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultEndpoint;
 
-/** The <b>IoTDBTopicEndpoint</b> is used to define methods to */
+/**
+ * The <b>IoTDBTopicEndpoint</b> extend the camel {@link DefaultEndpoint}.</br> It is used by camel to create producer
+ * and consumers of routes of the "iotdb-subscription" namespace
+ */
 @UriEndpoint(
         firstVersion = "1.0.0-SNAPSHOT",
         scheme = "iotdb-subscription",
@@ -28,19 +47,29 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
     private String topic;
 
     @UriParam
+    @Metadata(
+            title = "IoTDB consumer configuration",
+            description = "It contains the route parameters passed on the consumer route declaration")
     private final IoTDBTopicConsumerConfiguration consumerCfg;
 
     @UriParam
+    @Metadata(
+            title = "IoTDB producer configuration",
+            description = "It contains the route parameters passed on the producer route declaration")
     private final IoTDBTopicProducerConfiguration producerCfg;
+
+    private final IoTDBSessionConfiguration sessionCfg;
 
     public IoTDBTopicEndpoint(
             String uri,
             Component component,
+            IoTDBSessionConfiguration sessionCfg,
             IoTDBTopicConsumerConfiguration consumerCfg,
             IoTDBTopicProducerConfiguration producerCfg) {
         super(uri, component);
         this.consumerCfg = consumerCfg;
         this.producerCfg = producerCfg;
+        this.sessionCfg = sessionCfg;
     }
 
     /**
@@ -69,6 +98,18 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
     }
 
     /**
+     * Each Camel 'from' using this component should result in a distinct IoTDB consumer instance, especially when
+     * consumerId/groupId are auto-generated or when users define multiple routes that might otherwise normalize to the
+     * same URI but expect independent behavior.
+     *
+     * @return false by default
+     */
+    @Override
+    public boolean isSingleton() {
+        return false;
+    }
+
+    /**
      * Get the topic name provided in the route path.
      *
      * @return a string containing the IoTDB topic name
@@ -84,6 +125,10 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
      */
     public void setTopic(String topic) {
         this.topic = topic;
+    }
+
+    protected IoTDBSessionConfiguration getSessionCfg() {
+        return sessionCfg;
     }
 
     protected IoTDBTopicConsumerConfiguration getConsumerCfg() {

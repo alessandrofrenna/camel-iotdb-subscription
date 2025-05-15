@@ -26,6 +26,7 @@
       <artifactId>camel-support</artifactId>
     </dependency>
 
+    <!-- iotdb -->
     <dependency>
       <groupId>org.apache.iotdb</groupId>
       <artifactId>iotdb-session</artifactId>

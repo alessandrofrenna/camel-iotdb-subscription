@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
 import org.apache.camel.Exchange;
@@ -32,20 +48,21 @@ public class IoTDBTopicConsumer extends DefaultConsumer {
         super.doStart();
 
         final String topic = endpoint.getTopic();
-        var endpointCfg = endpoint.getConsumerCfg();
+        var consumerCfg = endpoint.getConsumerCfg();
+        var sessionCfg = endpoint.getSessionCfg();
 
         var consumerBuilder = new SubscriptionPushConsumer.Builder()
-                //                .host("")
-                //                .port(0)
-                //                .username("")
-                //                .password("")
-                .heartbeatIntervalMs(endpointCfg.getHeartbeatIntervalMs())
-                .endpointsSyncIntervalMs(endpointCfg.getSyncIntervalMs())
+                .host(sessionCfg.host())
+                .port(sessionCfg.port())
+                .username(sessionCfg.user())
+                .password(sessionCfg.password())
+                .heartbeatIntervalMs(consumerCfg.getHeartbeatIntervalMs())
+                .endpointsSyncIntervalMs(consumerCfg.getSyncIntervalMs())
                 .ackStrategy(AckStrategy.AFTER_CONSUME)
                 .consumeListener(this.getConsumeListener());
 
-        endpointCfg.getConsumerId().ifPresent(consumerBuilder::consumerId);
-        endpointCfg.getGroupId().ifPresent(consumerBuilder::consumerGroupId);
+        consumerCfg.getConsumerId().ifPresent(consumerBuilder::consumerId);
+        consumerCfg.getGroupId().ifPresent(consumerBuilder::consumerGroupId);
 
         pushConsumer = consumerBuilder.buildPushConsumer();
         pushConsumer.open();
