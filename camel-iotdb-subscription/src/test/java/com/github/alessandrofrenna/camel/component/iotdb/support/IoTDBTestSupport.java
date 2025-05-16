@@ -14,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.alessandrofrenna.camel.component.iotdb;
+package com.github.alessandrofrenna.camel.component.iotdb.support;
 
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSubscriptionComponent;
 import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
 import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
 import java.util.HashMap;

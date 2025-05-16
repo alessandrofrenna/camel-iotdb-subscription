@@ -18,10 +18,12 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 
 import static org.apache.iotdb.rpc.subscription.config.TopicConstant.*;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import com.github.alessandrofrenna.camel.component.iotdb.event.EventPublisher;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
+import java.util.Objects;
 import java.util.Properties;
-import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.DefaultProducer;
@@ -35,8 +37,16 @@ import org.slf4j.LoggerFactory;
 /**
  * The <b>IoTDBTopicProducer</b> extends the camel {@link DefaultProducer}. </br> It is used to create and/or drop topic
  * using an IoTDB {@link SubscriptionSession}. </br> On topic drop it fires an {@link IoTDBTopicDropped} event.</br>
+ * This class implements the {@link EventPublisher} interface because it is able to publish events: </br>
+ *
+ * <ol>
+ *   <li><b>{@link IoTDBStopAllTopicConsumers}</b>: after {@link IoTDBTopicProducer#process(Exchange)} invocation and
+ *       action is "drop";
+ *   <li><b>{@link IoTDBTopicDropped}</b>: after {@link IoTDBTopicProducer#process(Exchange)} invocation and action is
+ *       "drop". Drop operation must be successful;
+ * </ol>
  */
-public class IoTDBTopicProducer extends DefaultProducer {
+public class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
     private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicProducer.class);
     private final IoTDBTopicEndpoint endpoint;
     private final IoTDBTopicProducerConfiguration producerCfg;
@@ -57,10 +67,13 @@ public class IoTDBTopicProducer extends DefaultProducer {
     @Override
     public void process(Exchange exchange) {
         final String action = producerCfg.getAction();
+        Objects.requireNonNull(action, "action is null");
+
+        LOG.debug("Processing action '{}' for topic '{}'", action, endpoint.getTopic());
         switch (action.toLowerCase()) {
             case "create" -> createTopic();
             case "drop" -> dropTopic();
-            default -> throw new UnsupportedOperationException(String.format("%s action is not supported", action));
+            default -> throw new UnsupportedOperationException(String.format("Action %s is not supported", action));
         }
     }
 
@@ -89,48 +102,49 @@ public class IoTDBTopicProducer extends DefaultProducer {
 
         try (var session = getSession()) {
             session.open();
+            LOG.debug("Attempting to create topic '{}' for path '{}'", topic, path);
             session.createTopicIfNotExists(endpoint.getTopic(), topicProperties);
-            LOG.debug("Created topic {} bound to {} timeseries", topic, path);
-        } catch (IoTDBConnectionException | StatementExecutionException e) {
-            LOG.error("Creation of topic {} bound to {} timeseries failed", topic, path);
-            throw new RuntimeCamelException(e);
+            LOG.info("Topic {} bound to {} timeseries path", topic, path);
+        } catch (IoTDBConnectionException e) {
+            throw new RuntimeCamelException("Failed to connect to IoTDB for topic creation: " + e.getMessage(), e);
+        } catch (StatementExecutionException e) {
+            String errorMessage =
+                    String.format("Execution failed during creation/check of topic '%s' for path '%s'", topic, path);
+            LOG.error(errorMessage, e);
+            throw new RuntimeCamelException(errorMessage, e);
         }
     }
 
     private void dropTopic() {
         if (producerCfg.getPath().filter(p -> !p.isBlank()).isPresent()) {
-            LOG.debug("action=drop invoked with path, it will be ignored");
+            LOG.warn("action=drop invoked with path, it will be ignored");
         }
 
         String topic = endpoint.getTopic();
+        // Step 1: stop all consumers
+        LOG.debug("Publishing IoTDBStopAllTopicConsumers for topic '{}'", topic);
+        publishEvent(new IoTDBStopAllTopicConsumers(this, topic));
+        try {
+            LOG.trace("Pausing briefly after commanding consumer stop for topic '{}'...", topic);
+            Thread.sleep(IoTDBTopicProducerConfiguration.PRE_DROP_DELAY.toMillis());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warn("Interrupted while pausing for consumers to begin stopping for topic '{}'", topic);
+        }
+        // Step 2: try to drop topic from IoTDB if exists
         try (var session = getSession()) {
             session.open();
+            LOG.debug("Attempting to drop IoTDB topic '{}' (if it exists)", topic);
             session.dropTopicIfExists(topic);
-            LOG.debug("Topic {} successfully dropped", topic);
+            LOG.info("IoTDB topic '{}' successfully dropped (if it existed).", topic);
+            // Step 3: delete the previously stopped routes
+            LOG.debug("Publishing IoTDBTopicDropped for topic '{}'", topic);
+            publishEvent(new IoTDBTopicDropped(this, topic));
         } catch (IoTDBConnectionException | StatementExecutionException e) {
-            LOG.error("Topic {} drop failed", topic);
-            throw new RuntimeCamelException(e);
-        }
-
-        publishTopicDropEvent(topic);
-    }
-
-    private void publishTopicDropEvent(String deletedTopic) {
-        final CamelContext camelContext = endpoint.getCamelContext();
-        if (camelContext == null) {
-            LOG.warn("CamelContext is not available. Cannot publish IoTDBTopicDropped");
-            return;
-        }
-
-        final var timestamp = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
-        final var dropEvent = new IoTDBTopicDropped(this, deletedTopic);
-        dropEvent.setTimestamp(timestamp);
-
-        try {
-            LOG.debug("Dispatching {}", dropEvent);
-            camelContext.getManagementStrategy().notify(dropEvent);
-        } catch (Exception e) {
-            LOG.error("Failed to publish IoTDBTopicDrop event for topic {}: {}", deletedTopic, e.getMessage(), e);
+            // Fallback: id drop fails restart the previously stopped routes
+            LOG.error("Drop of IoTDB topic '{}' failed. IoTDBTopicDropped event will not be sent", topic, e);
+            LOG.debug("Publishing IoTDBResumeAllTopicConsumers for topic '{}' to resume all stopped consumers", topic);
+            publishEvent(new IoTDBResumeAllTopicConsumers(this, topic));
         }
     }
 }

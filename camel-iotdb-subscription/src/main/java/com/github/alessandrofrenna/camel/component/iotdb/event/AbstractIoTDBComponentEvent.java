@@ -14,22 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.github.alessandrofrenna.camel.component.iotdb;
+
+package com.github.alessandrofrenna.camel.component.iotdb.event;
 
 import java.util.EventObject;
+import java.util.Objects;
 import org.apache.camel.spi.CamelEvent;
 
 /**
- * The <b>IoTDBTopicDropped</b> is a {@link CamelEvent} that extends an {@link EventObject}.</br> The event if fired by
- * an {@link IoTDBTopicProducer} when {@link IoTDBTopicProducerConfiguration#getAction()} returns "drop" as value.</br>
- * The events will be handled by camel using the {@link IoTDBSubscriptionEventListener}.
+ * The <b>AbstractIoTDBComponentEvent</b> is a {@link CamelEvent} that extends an {@link EventObject}.</br> This
+ * abstract class is shared among all concrete events
  */
-public class IoTDBTopicDropped extends EventObject implements CamelEvent {
+public class AbstractIoTDBComponentEvent extends EventObject implements CamelEvent {
     private final String topicName;
     private long timestamp;
 
-    public IoTDBTopicDropped(Object source, String topicName) {
+    public AbstractIoTDBComponentEvent(Object source, String topicName) {
         super(source);
+        Objects.requireNonNull(topicName, "topicName is null");
         this.topicName = topicName;
     }
 
@@ -51,6 +53,11 @@ public class IoTDBTopicDropped extends EventObject implements CamelEvent {
     @Override
     public String toString() {
         return String.format(
-                "IoTDBTopicDropped[topic=%s, timestamp=%d, source=%s]", topicName, getTimestamp(), getSource());
+                "%s[topic=%s, timestamp=%d, source=%s]",
+                getClass().getSimpleName(), topicName, getTimestamp(), getSource());
+    }
+
+    public String getTopicName() {
+        return topicName;
     }
 }

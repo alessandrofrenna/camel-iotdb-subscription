@@ -16,6 +16,11 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IotDBTopicConsumerUnsubscribed;
 import org.apache.camel.spi.CamelEvent;
 import org.apache.camel.support.EventNotifierSupport;
 import org.slf4j.Logger;
@@ -33,19 +38,44 @@ public class IoTDBSubscriptionEventListener extends EventNotifierSupport {
      * events are:
      *
      * <ol>
+     *   <li>{@link IoTDBTopicConsumerSubscribed}
+     *   <li>{@link IotDBTopicConsumerUnsubscribed}
+     *   <li>{@link IoTDBStopAllTopicConsumers}
      *   <li>{@link IoTDBTopicDropped}
+     *   <li>{@link IoTDBResumeAllTopicConsumers}
+     *   <li>{@link CamelEvent.RouteRemovedEvent}
      * </ol>
      *
      * @param event to handle
      */
     @Override
     public void notify(CamelEvent event) {
-        if (event instanceof IoTDBTopicDropped dropEvent) {
-            handleDropEvent(dropEvent);
+        if (event instanceof IoTDBTopicConsumerSubscribed subscribedEvent) {
+            handleEvent(subscribedEvent);
+        } else if (event instanceof IotDBTopicConsumerUnsubscribed unsubscribedEvent) {
+            handleEvent(unsubscribedEvent);
+        } else if (event instanceof IoTDBStopAllTopicConsumers stopAllTopicConsumers) {
+            handleEvent(stopAllTopicConsumers);
+        } else if (event instanceof IoTDBTopicDropped dropEvent) {
+            handleEvent(dropEvent);
+        } else if (event instanceof IoTDBResumeAllTopicConsumers resumeEvent) {
+            handleEvent(resumeEvent);
+        } else if (event instanceof CamelEvent.RouteRemovedEvent routeRemovedEvent) {
+            handleEvent(routeRemovedEvent);
         }
     }
 
-    private void handleDropEvent(IoTDBTopicDropped dropEvent) {
+    @Override
+    public boolean isEnabled(CamelEvent event) {
+        return event instanceof IoTDBTopicConsumerSubscribed
+                || event instanceof IotDBTopicConsumerUnsubscribed
+                || event instanceof IoTDBStopAllTopicConsumers
+                || event instanceof IoTDBResumeAllTopicConsumers
+                || event instanceof IoTDBTopicDropped
+                || event instanceof CamelEvent.RouteRemovedEvent;
+    }
+
+    private void handleEvent(CamelEvent dropEvent) {
         LOG.debug("{}", dropEvent);
     }
 

@@ -16,6 +16,8 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
@@ -24,6 +26,7 @@ import org.apache.camel.spi.UriParams;
 /** The <b>IoTDBTopicProducerConfiguration</b> class keeps track of the uri parameters used by the producer. */
 @UriParams
 public class IoTDBTopicProducerConfiguration {
+    static final Duration PRE_DROP_DELAY = Duration.of(25, ChronoUnit.MILLIS);
 
     @UriParam
     @Metadata(

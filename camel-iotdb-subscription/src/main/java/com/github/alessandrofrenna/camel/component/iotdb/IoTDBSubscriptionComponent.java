@@ -51,6 +51,19 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
 
     public IoTDBSubscriptionComponent() {
         eventListener = new IoTDBSubscriptionEventListener();
+        eventListener.setIgnoreCamelContextEvents(true);
+        eventListener.setIgnoreCamelContextInitEvents(true);
+        eventListener.setIgnoreExchangeEvents(true);
+        eventListener.setIgnoreExchangeCreatedEvent(true);
+        eventListener.setIgnoreExchangeCompletedEvent(true);
+        eventListener.setIgnoreExchangeFailedEvents(true);
+        eventListener.setIgnoreExchangeRedeliveryEvents(true);
+        eventListener.setIgnoreExchangeAsyncProcessingStartedEvents(true);
+        eventListener.setIgnoreExchangeSendingEvents(true);
+        eventListener.setIgnoreExchangeSentEvents(true);
+        eventListener.setIgnoreServiceEvents(true);
+        eventListener.setIgnoreStepEvents(true);
+        eventListener.setIgnoreRouteEvents(false);
     }
 
     /**
@@ -147,18 +160,36 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
             LOG.warn("CamelContext is null. Cannot register IoTDBSubscriptionEventListener");
             return;
         }
-        camelContext.getManagementStrategy().addEventNotifier(eventListener);
-        LOG.debug("Registered a new EventNotifier: IoTDBSubscriptionEventListener");
+
+        if (eventListener == null) {
+            throw new IllegalStateException("IoTDBSubscriptionEventListener should not be null");
+        }
+
+        if (camelContext.getManagementStrategy().getEventNotifiers().contains(eventListener)) {
+            LOG.warn("IoTDBTopicEventListener already registered in CamelContext [{}].", camelContext.getName());
+        } else {
+            camelContext.getManagementStrategy().addEventNotifier(eventListener);
+            LOG.debug("Registered IoTDBTopicEventListener with CamelContext [{}].", camelContext.getName());
+        }
     }
 
     @Override
     protected void doStop() throws Exception {
         final CamelContext camelContext = getCamelContext();
-        if (camelContext == null) {
+        if (camelContext == null || eventListener == null) {
             return;
         }
-        camelContext.getManagementStrategy().removeEventNotifier(eventListener);
-        LOG.debug("EventNotifier removed: IoTDBSubscriptionEventListener");
+
+        final var removed = camelContext.getManagementStrategy().removeEventNotifier(eventListener);
+        if (removed) {
+            LOG.debug("Unregistered IoTDBTopicEventListener from CamelContext [{}].", camelContext.getName());
+        }
+        // EventNotifierSupport is a Service, Camel should stop it.
+        // Explicitly stop if necessary, though usually managed by Camel.
+        if (eventListener.isStarted()) {
+            eventListener.stop();
+        }
+
         super.doStop();
     }
 }
