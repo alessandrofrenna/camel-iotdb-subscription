@@ -100,7 +100,6 @@ public class IoTDBTopicConsumer extends DefaultConsumer implements EventPublishe
 
     @Override
     protected void doStop() throws Exception {
-
         if (pushConsumer != null) {
             final String topic = endpoint.getTopic();
             LOG.debug("Stopping IoTDBTopicConsumer for topic: '{}'", topic);
