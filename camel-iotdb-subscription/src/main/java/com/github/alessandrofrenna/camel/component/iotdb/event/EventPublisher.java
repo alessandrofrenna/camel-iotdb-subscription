@@ -41,9 +41,7 @@ public interface EventPublisher extends EndpointAware {
         final String eventTypeName = event.getType().getClass().getSimpleName();
         final CamelContext ctx = getEndpoint().getCamelContext();
         if (ctx == null) {
-            LOG.warn(
-                    "CamelContext is not available. Cannot publish {}",
-                    event.getType().getClass().getSimpleName());
+            LOG.warn("CamelContext is not available. Cannot publish {}", eventTypeName);
             return;
         }
 
