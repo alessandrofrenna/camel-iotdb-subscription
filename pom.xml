@@ -170,6 +170,10 @@
                             <style>PALANTIR</style>
                             <formatJavadoc>true</formatJavadoc>
                         </palantirJavaFormat>
+                        <importOrder>
+                            <semanticSort>true</semanticSort>
+                            <order>java,javafx,org,com.github,static</order>
+                        </importOrder>
                         <!-- Rules -->
                     </java>
                 </configuration>
