@@ -20,14 +20,9 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IotDBTopicConsumerUnsubscribed;
-import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.camel.ProducerTemplate;
 import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
@@ -37,6 +32,12 @@ import org.apache.camel.support.EventNotifierSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
+import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
 
 public class IotDBLifecycleTests extends IoTDBTestSupport {
     private final Map<Class<? extends CamelEvent>, Integer> publishedEvents = new HashMap<>();
@@ -50,8 +51,6 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
         public void notify(CamelEvent event) {
             if (event instanceof IoTDBTopicConsumerSubscribed) {
                 findAndIncrement(IoTDBTopicConsumerSubscribed.class);
-            } else if (event instanceof IotDBTopicConsumerUnsubscribed) {
-                findAndIncrement(IotDBTopicConsumerUnsubscribed.class);
             } else if (event instanceof IoTDBStopAllTopicConsumers) {
                 findAndIncrement(IoTDBStopAllTopicConsumers.class);
             } else if (event instanceof IoTDBTopicDropped) {
@@ -71,15 +70,19 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
         context().getManagementStrategy().addEventNotifier(eventNotifier);
 
         producerTemplate.sendBody("iotdb-subscription:rain_topic?action=create&path=root.test.demo_device.rain", null);
+        producerTemplate.sendBody(
+                "iotdb-subscription:temperature_topic?action=create&path=root.test.demo_device.temperature", null);
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
                 from("iotdb-subscription:rain_topic?groupId=group_1&consumerId=first_consumer")
                         .to("mock:consumer1");
-                from("iotdb-subscription:rain_topic?groupId=group_1&consumerId=second_consume")
-                        .to("mock:consume2");
-                from("iotdb-subscription:rain_topic?groupId=group_2&consumerId=first_consume")
+                from("iotdb-subscription:rain_topic?groupId=group_1&consumerId=second_consumer")
+                        .to("mock:consumer2");
+                from("iotdb-subscription:rain_topic?groupId=group_2&consumerId=first_consumer")
                         .to("mock:consumer3");
+                from("iotdb-subscription:temperature_topic?groupId=group_1&consumerId=first_consumer")
+                        .to("mock:consumer1");
             }
         });
     }
@@ -93,6 +96,7 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
         for (Route route : context.getRoutes()) {
             try {
                 var routeId = route.getRouteId();
+                context.stop();
                 context.removeRoute(routeId);
             } catch (Exception ignored) {
                 // NO-OP
@@ -108,9 +112,9 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
                 publishedEvents.containsKey(IoTDBTopicConsumerSubscribed.class),
                 "IoTDBTopicConsumerSubscribed events was published");
         assertEquals(
-                3,
+                4,
                 publishedEvents.get(IoTDBTopicConsumerSubscribed.class),
-                "3 IoTDBTopicConsumerSubscribed event was published");
+                "4 IoTDBTopicConsumerSubscribed event was published");
         assertTrue(
                 publishedEvents.containsKey(IoTDBStopAllTopicConsumers.class),
                 "IoTDBStopAllTopicConsumers events was published");
@@ -118,16 +122,7 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
                 1,
                 publishedEvents.get(IoTDBStopAllTopicConsumers.class),
                 "only 1 IoTDBStopAllTopicConsumers event was published");
-        //        assertTrue(
-        //                publishedEvents.containsKey(IotDBTopicConsumerUnsubscribed.class),
-        //                "IotDBTopicConsumerUnsubscribed events was published");
-        //        assertEquals(
-        //                3,
-        //                publishedEvents.get(IotDBTopicConsumerUnsubscribed.class),
-        //                "3 IotDBTopicConsumerUnsubscribed event was published");
-        //        assertTrue(publishedEvents.containsKey(IoTDBTopicDropped.class), "IoTDBTopicDropped events was
-        // published");
-        //        assertEquals(1, publishedEvents.get(IoTDBTopicDropped.class), "only 1 IoTDBTopicDropped event was
-        // published");
+        assertTrue(publishedEvents.containsKey(IoTDBTopicDropped.class), "IoTDBTopicDropped events was published");
+        assertEquals(1, publishedEvents.get(IoTDBTopicDropped.class), "only 1 IoTDBTopicDropped event was published");
     }
 }

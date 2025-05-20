@@ -37,7 +37,7 @@ import org.apache.camel.support.DefaultEndpoint;
         title = "IoTDBSubscription",
         syntax = "iotdb-subscription:topic",
         category = {Category.IOT})
-public class IoTDBTopicEndpoint extends DefaultEndpoint {
+class IoTDBTopicEndpoint extends DefaultEndpoint {
 
     @UriPath(description = "The IoTDB topic name")
     @Metadata(
@@ -50,26 +50,16 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
     @Metadata(
             title = "IoTDB consumer configuration",
             description = "It contains the route parameters passed on the consumer route declaration")
-    private final IoTDBTopicConsumerConfiguration consumerCfg;
+    private final IoTDBTopicConsumerConfiguration consumerCfg = new IoTDBTopicConsumerConfiguration();
 
     @UriParam
     @Metadata(
             title = "IoTDB producer configuration",
             description = "It contains the route parameters passed on the producer route declaration")
-    private final IoTDBTopicProducerConfiguration producerCfg;
+    private final IoTDBTopicProducerConfiguration producerCfg = new IoTDBTopicProducerConfiguration();
 
-    private final IoTDBSessionConfiguration sessionCfg;
-
-    public IoTDBTopicEndpoint(
-            String uri,
-            Component component,
-            IoTDBSessionConfiguration sessionCfg,
-            IoTDBTopicConsumerConfiguration consumerCfg,
-            IoTDBTopicProducerConfiguration producerCfg) {
+    IoTDBTopicEndpoint(String uri, Component component) {
         super(uri, component);
-        this.consumerCfg = consumerCfg;
-        this.producerCfg = producerCfg;
-        this.sessionCfg = sessionCfg;
     }
 
     /**
@@ -79,7 +69,7 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
      */
     @Override
     public Producer createProducer() {
-        return new IoTDBTopicProducer(this);
+        return new IoTDBTopicProducer(this, ((IoTDBSubscriptionComponent) getComponent()).getTopicManager());
     }
 
     /**
@@ -92,7 +82,8 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
      */
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
-        final IoTDBTopicConsumer consumer = new IoTDBTopicConsumer(this, processor);
+        final IoTDBTopicConsumer consumer = new IoTDBTopicConsumer(
+                this, processor, ((IoTDBSubscriptionComponent) getComponent()).getConsumerManager());
         configureConsumer(consumer);
         return consumer;
     }
@@ -125,10 +116,6 @@ public class IoTDBTopicEndpoint extends DefaultEndpoint {
      */
     public void setTopic(String topic) {
         this.topic = topic;
-    }
-
-    protected IoTDBSessionConfiguration getSessionCfg() {
-        return sessionCfg;
     }
 
     protected IoTDBTopicConsumerConfiguration getConsumerCfg() {

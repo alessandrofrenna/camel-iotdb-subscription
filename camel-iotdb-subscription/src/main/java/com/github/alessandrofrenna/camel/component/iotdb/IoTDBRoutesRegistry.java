@@ -19,7 +19,9 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,7 +36,7 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopic
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
-public interface IoTDBRoutesRegistry extends CamelContextAware {
+public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
     void registerRouteAfterConsumerSubscription(IoTDBTopicConsumerSubscribed event);
 
     void stopAllConsumedTopicRoutes(IoTDBStopAllTopicConsumers event);
@@ -45,7 +47,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware {
 
     void removeTopicMappedRoutes(String topicName, String routeId);
 
-    void clearAllTopicMappedRoutes();
+    void close();
 
     class Default implements IoTDBRoutesRegistry {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBRoutesRegistry.class);
@@ -54,6 +56,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware {
         private CamelContext camelContext;
 
         public Default(IoTDBTopicConsumerManager consumerManager) {
+            Objects.requireNonNull(consumerManager, "consumer manager is null");
             this.consumerManager = consumerManager;
         }
 
@@ -117,9 +120,18 @@ public interface IoTDBRoutesRegistry extends CamelContextAware {
         }
 
         @Override
-        public void clearAllTopicMappedRoutes() {
+        public void close() {
+            final var camelContext = getCamelContext();
+            new ArrayList<>(routesIdByTopic.values())
+                    .stream().flatMap(Collection::stream).forEach(routeId -> {
+                        try {
+                            camelContext.removeRoute(routeId);
+                        } catch (Exception ignore) {
+                            // NO-OP
+                        }
+                    });
+            LOG.debug("Cleared all topic mapped routes from registry");
             routesIdByTopic.clear();
-            LOG.info("Cleared all topic mapped routes from registry.");
         }
 
         @Override

@@ -16,20 +16,22 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import com.github.alessandrofrenna.camel.component.iotdb.event.EventPublisher;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
-import com.github.alessandrofrenna.camel.component.iotdb.event.IotDBTopicConsumerUnsubscribed;
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
+
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.DefaultConsumer;
-import org.apache.iotdb.session.subscription.consumer.AckStrategy;
+import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 import org.apache.iotdb.session.subscription.consumer.ConsumeResult;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.alessandrofrenna.camel.component.iotdb.event.EventPublisher;
+import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
 
 /**
  * The <b>IoTDBTopicConsumer</b> extends the camel {@link DefaultConsumer}. </br> It is used to create a
@@ -38,22 +40,21 @@ import org.slf4j.LoggerFactory;
  *
  * <ol>
  *   <li><b>{@link IoTDBTopicConsumerSubscribed}</b>: after {@link IoTDBTopicConsumer#doStart()} invocation, when a new
- *       {@link SubscriptionPushConsumer} is created;
- *   <li><b>{@link IotDBTopicConsumerUnsubscribed}</b>: after {@link IoTDBTopicConsumer#doStop()} invocation, when the
- *       {@link SubscriptionPushConsumer} is closed;
+ *       {@link SubscriptionPushConsumer} is created.
  * </ol>
  */
-public class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
-
-    private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
-    private static final String TOPIC_HEADER_KEY = "IoTDBTopic";
+class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
+    static final String MESSAGE_HEADER_KEY = "CommitContext";
+    private final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
 
     private final IoTDBTopicEndpoint endpoint;
-    private SubscriptionPushConsumer pushConsumer;
+    private final SubscriptionPushConsumer pushConsumer;
 
-    public IoTDBTopicConsumer(IoTDBTopicEndpoint endpoint, Processor processor) {
+    IoTDBTopicConsumer(IoTDBTopicEndpoint endpoint, Processor processor, IoTDBTopicConsumerManager consumerManager) {
         super(endpoint, processor);
         this.endpoint = endpoint;
+        this.pushConsumer =
+                consumerManager.createPushConsumer(endpoint.getConsumerCfg(), this.defaultConsumeListener());
     }
 
     /**
@@ -70,28 +71,19 @@ public class IoTDBTopicConsumer extends DefaultConsumer implements EventPublishe
         return route.getRouteId();
     }
 
+    /**
+     * Get the push consumer key of the push consumer created by an instance of this class.
+     *
+     * @return the push consumer key
+     */
+    public PushConsumerKey getPushConsumerKey() {
+        return new PushConsumerKey(pushConsumer.getConsumerGroupId(), pushConsumer.getConsumerId());
+    }
+
     @Override
     protected void doStart() throws Exception {
-        super.doStart();
-
         final String topic = endpoint.getTopic();
-        var consumerCfg = endpoint.getConsumerCfg();
-        var sessionCfg = endpoint.getSessionCfg();
-
-        var consumerBuilder = new SubscriptionPushConsumer.Builder()
-                .host(sessionCfg.host())
-                .port(sessionCfg.port())
-                .username(sessionCfg.user())
-                .password(sessionCfg.password())
-                .heartbeatIntervalMs(consumerCfg.getHeartbeatIntervalMs())
-                .endpointsSyncIntervalMs(consumerCfg.getSyncIntervalMs())
-                .ackStrategy(AckStrategy.AFTER_CONSUME)
-                .consumeListener(this.getConsumeListener());
-
-        consumerCfg.getConsumerId().ifPresent(consumerBuilder::consumerId);
-        consumerCfg.getGroupId().ifPresent(consumerBuilder::consumerGroupId);
-
-        pushConsumer = consumerBuilder.buildPushConsumer();
+        super.doStart();
         pushConsumer.open();
         pushConsumer.subscribe(topic);
         publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, getRouteId()));
@@ -100,40 +92,42 @@ public class IoTDBTopicConsumer extends DefaultConsumer implements EventPublishe
 
     @Override
     protected void doStop() throws Exception {
-        if (pushConsumer != null) {
-            final String topic = endpoint.getTopic();
-            LOG.debug("Stopping IoTDBTopicConsumer for topic: '{}'", topic);
-            try {
-                LOG.debug("Unsubscribing IoTDB push consumer for topic: '{}'", endpoint.getTopic());
-                pushConsumer.unsubscribe(topic);
-                pushConsumer.close();
-                pushConsumer = null;
-                publishEvent(new IotDBTopicConsumerUnsubscribed(this, topic, getRouteId()));
-                LOG.info("Unsubscribed and closed IoTDB push consumer for topic: '{}'", topic);
-            } catch (Exception e) {
-                LOG.error("Error during IoTDB unsubscribe/close for topic '{}'", topic, e);
-            }
+        final String topic = endpoint.getTopic();
+        LOG.debug("Stopping IoTDBTopicConsumer for topic: '{}'", topic);
+        try {
+            LOG.debug("Unsubscribing IoTDB push consumer for topic: '{}'", endpoint.getTopic());
+            pushConsumer.unsubscribe(topic);
+            pushConsumer.close();
+            LOG.info("Unsubscribed and closed IoTDB push consumer for topic: '{}'", topic);
+        } catch (SubscriptionException e) {
+            LOG.info("Cannot unsubscribe/close from topic '{}': {}", topic, e.getMessage());
         }
         super.doStop();
     }
 
-    private ConsumeListener getConsumeListener() {
+    private ConsumeListener defaultConsumeListener() {
         return message -> {
-            LOG.debug("Received message from: {}", message.getCommitContext());
-
             final Exchange exchange = endpoint.createExchange();
-            exchange.getIn()
-                    .setHeader(TOPIC_HEADER_KEY, message.getCommitContext().getTopicName());
+            final Processor processor = getProcessor();
+
+            exchange.getIn().setHeader(MESSAGE_HEADER_KEY, message.getCommitContext());
             exchange.getIn().setBody(message);
 
             try {
                 getProcessor().process(exchange);
-                LOG.trace("Message from {} processed successfully", message.getCommitContext());
-                return ConsumeResult.SUCCESS;
+                if (exchange.getException() != null) {
+                    LOG.error("Error processing the message", exchange.getException());
+                    getExceptionHandler()
+                            .handleException(
+                                    "Error processing IoTDB message in route", exchange, exchange.getException());
+                    return ConsumeResult.FAILURE;
+                }
             } catch (Exception e) {
-                LOG.error("Error processing message received from {}", message.getCommitContext());
+                LOG.error("Unexpected error processing the message", e);
+                getExceptionHandler().handleException("Unexpected error processing IoTDB message", exchange, e);
                 return ConsumeResult.FAILURE;
             }
+            return ConsumeResult.SUCCESS;
         };
     }
 }

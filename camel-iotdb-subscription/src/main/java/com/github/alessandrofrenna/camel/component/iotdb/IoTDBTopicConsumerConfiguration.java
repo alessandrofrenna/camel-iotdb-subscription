@@ -17,6 +17,7 @@
 package com.github.alessandrofrenna.camel.component.iotdb;
 
 import java.util.Optional;
+
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriParams;
@@ -52,7 +53,7 @@ public class IoTDBTopicConsumerConfiguration {
                     "The consumer will ping IoTDB to synchronize its state after this interval of time in millisecond passes")
     private Long syncIntervalMs;
 
-    public IoTDBTopicConsumerConfiguration() {}
+    IoTDBTopicConsumerConfiguration() {}
 
     /**
      * Get the consumer group id passed as route uri parameter.</br> The value of consumer group id is optional. If not

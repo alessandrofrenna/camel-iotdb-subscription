@@ -19,11 +19,15 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration.*;
 
 import java.util.Map;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
+import org.apache.camel.spi.EventNotifier;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.annotations.Component;
 import org.apache.camel.support.HealthCheckComponent;
+import org.apache.iotdb.isession.SessionConfig;
+import org.apache.iotdb.session.subscription.SubscriptionSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,24 +51,28 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     @Metadata(title = "IoTDB password", required = true, secret = true, defaultValue = DEFAULT_PASSWORD)
     private String password;
 
-    private final IoTDBSubscriptionEventListener eventListener;
+    private IoTDBTopicManager topicManager;
+    private IoTDBTopicConsumerManager consumerManager;
+    private IoTDBRoutesRegistry routesRegistry;
+    private IoTDBSubscriptionEventListener eventListener;
 
-    public IoTDBSubscriptionComponent() {
-        eventListener = new IoTDBSubscriptionEventListener();
-        eventListener.setIgnoreCamelContextEvents(true);
-        eventListener.setIgnoreCamelContextInitEvents(true);
-        eventListener.setIgnoreExchangeEvents(true);
-        eventListener.setIgnoreExchangeCreatedEvent(true);
-        eventListener.setIgnoreExchangeCompletedEvent(true);
-        eventListener.setIgnoreExchangeFailedEvents(true);
-        eventListener.setIgnoreExchangeRedeliveryEvents(true);
-        eventListener.setIgnoreExchangeAsyncProcessingStartedEvents(true);
-        eventListener.setIgnoreExchangeSendingEvents(true);
-        eventListener.setIgnoreExchangeSentEvents(true);
-        eventListener.setIgnoreServiceEvents(true);
-        eventListener.setIgnoreStepEvents(true);
-        eventListener.setIgnoreRouteEvents(false);
+    private static void configureEventNotifier(EventNotifier eventNotifier) {
+        eventNotifier.setIgnoreCamelContextEvents(true);
+        eventNotifier.setIgnoreCamelContextInitEvents(true);
+        eventNotifier.setIgnoreExchangeEvents(true);
+        eventNotifier.setIgnoreExchangeCreatedEvent(true);
+        eventNotifier.setIgnoreExchangeCompletedEvent(true);
+        eventNotifier.setIgnoreExchangeFailedEvents(true);
+        eventNotifier.setIgnoreExchangeRedeliveryEvents(true);
+        eventNotifier.setIgnoreExchangeAsyncProcessingStartedEvents(true);
+        eventNotifier.setIgnoreExchangeSendingEvents(true);
+        eventNotifier.setIgnoreExchangeSentEvents(true);
+        eventNotifier.setIgnoreServiceEvents(true);
+        eventNotifier.setIgnoreStepEvents(true);
+        eventNotifier.setIgnoreRouteEvents(false);
     }
+
+    public IoTDBSubscriptionComponent() {}
 
     /**
      * Get the IoTDB host name
@@ -138,13 +146,35 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
         this.password = password;
     }
 
-    protected Endpoint createEndpoint(String uri, String topic, Map<String, Object> parameters) throws Exception {
-        final IoTDBTopicConsumerConfiguration consumerCfg = new IoTDBTopicConsumerConfiguration();
-        final IoTDBTopicProducerConfiguration producerCfg = new IoTDBTopicProducerConfiguration();
-        final IoTDBSessionConfiguration sessionCfg =
-                new IoTDBSessionConfiguration(getHost(), getPort(), getUser(), getPassword());
+    /**
+     * Get the topic manager that handles topic creation and drop.
+     *
+     * @return the topic manager instance.
+     */
+    public IoTDBTopicManager getTopicManager() {
+        return topicManager;
+    }
 
-        IoTDBTopicEndpoint endpoint = new IoTDBTopicEndpoint(uri, this, sessionCfg, consumerCfg, producerCfg);
+    /**
+     * Get the consumer manager that handles consumers.
+     *
+     * @return the consumer manager instance.
+     */
+    public IoTDBTopicConsumerManager getConsumerManager() {
+        return consumerManager;
+    }
+
+    /**
+     * Get the routes registry that handles the routes registered by the component for each topic.
+     *
+     * @return the routes registry instance.
+     */
+    public IoTDBRoutesRegistry getRoutesRegistry() {
+        return routesRegistry;
+    }
+
+    protected Endpoint createEndpoint(String uri, String topic, Map<String, Object> parameters) throws Exception {
+        IoTDBTopicEndpoint endpoint = new IoTDBTopicEndpoint(uri, this);
         setProperties(endpoint, parameters);
         endpoint.setTopic(topic);
 
@@ -153,18 +183,27 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     @Override
-    protected void doStart() throws Exception {
-        super.doStart();
+    protected void doInit() throws Exception {
+        super.doInit();
+        final var sessionConfiguration = new IoTDBSessionConfiguration(getHost(), getPort(), getUser(), getPassword());
+        consumerManager = new IoTDBTopicConsumerManager.Default(sessionConfiguration);
+        routesRegistry = new IoTDBRoutesRegistry.Default(consumerManager);
+        eventListener = new IoTDBSubscriptionEventListener(routesRegistry);
+        configureEventNotifier(eventListener);
+
+        topicManager = new IoTDBTopicManager.Default(() -> new SubscriptionSession(
+                sessionConfiguration.host(),
+                sessionConfiguration.port(),
+                sessionConfiguration.user(),
+                sessionConfiguration.password(),
+                SessionConfig.DEFAULT_MAX_FRAME_SIZE));
+
         final CamelContext camelContext = getCamelContext();
         if (camelContext == null) {
             LOG.warn("CamelContext is null. Cannot register IoTDBSubscriptionEventListener");
             return;
         }
-
-        if (eventListener == null) {
-            throw new IllegalStateException("IoTDBSubscriptionEventListener should not be null");
-        }
-
+        routesRegistry.setCamelContext(camelContext);
         if (camelContext.getManagementStrategy().getEventNotifiers().contains(eventListener)) {
             LOG.warn("IoTDBTopicEventListener already registered in CamelContext [{}].", camelContext.getName());
         } else {
@@ -180,6 +219,9 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
             return;
         }
 
+        routesRegistry.close();
+        consumerManager.close();
+
         final var removed = camelContext.getManagementStrategy().removeEventNotifier(eventListener);
         if (removed) {
             LOG.debug("Unregistered IoTDBTopicEventListener from CamelContext [{}].", camelContext.getName());
@@ -189,6 +231,10 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
         if (eventListener.isStarted()) {
             eventListener.stop();
         }
+
+        routesRegistry = null;
+        consumerManager = null;
+        topicManager = null;
 
         super.doStop();
     }

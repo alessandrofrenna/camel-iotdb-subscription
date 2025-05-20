@@ -28,13 +28,13 @@ import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface IoTDBTopicConsumerManager {
+public interface IoTDBTopicConsumerManager extends AutoCloseable {
     SubscriptionPushConsumer createPushConsumer(
             IoTDBTopicConsumerConfiguration consumerCfg, ConsumeListener consumeListener);
 
     void destroyPushConsumer(PushConsumerKey pushConsumerKey);
 
-    void clearAll();
+    void close();
 
     record PushConsumerKey(String groupId, String consumerId) {
         @Override
@@ -85,18 +85,20 @@ public interface IoTDBTopicConsumerManager {
             }
 
             try {
+                // The key should be removed only when close doesn't throw an exception
                 consumerRegistry.get(pushConsumerKey).close();
-            } catch (Exception e) {
-                LOG.error("Error destroying consumer with key {}", pushConsumerKey, e);
-            } finally {
                 consumerRegistry.remove(pushConsumerKey);
                 LOG.debug("Consumer with key {} was destroyed", pushConsumerKey);
+            } catch (Exception e) {
+                LOG.error("Error destroying consumer with key {}: {}", pushConsumerKey, e.getMessage());
             }
         }
 
         @Override
-        public void clearAll() {
+        public void close() {
             new ArrayList<>(consumerRegistry.keySet()).forEach(this::destroyPushConsumer);
+            LOG.debug("Cleared all consumers mapped to topic");
+            consumerRegistry.clear();
         }
 
         SubscriptionPushConsumer createNewPushConsumer(
@@ -151,7 +153,9 @@ public interface IoTDBTopicConsumerManager {
                     super.close();
                     LOG.debug("Consumer with key {} closed", consumerKey);
                 } else {
-                    LOG.debug("Consumer with key {} is subscribed to {} and will not be closed", consumerKey, count);
+                    final String msg = String.format(
+                            "Consumer with key %s is subscribed to %s and will not be closed", consumerKey, count);
+                    throw new IllegalStateException(msg);
                 }
             }
 

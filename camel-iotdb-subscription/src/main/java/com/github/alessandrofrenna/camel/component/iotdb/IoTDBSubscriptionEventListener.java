@@ -90,7 +90,6 @@ class IoTDBSubscriptionEventListener extends EventNotifierSupport {
 
     @Override
     protected void doStop() throws Exception {
-        routesRegistry.clearAllTopicMappedRoutes();
         super.doStop();
     }
 }

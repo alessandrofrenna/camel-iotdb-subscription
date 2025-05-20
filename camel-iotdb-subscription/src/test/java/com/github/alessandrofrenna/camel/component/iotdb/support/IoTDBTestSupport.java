@@ -16,13 +16,13 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb.support;
 
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration;
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSubscriptionComponent;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.camel.CamelContext;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.test.junit5.CamelTestSupport;
@@ -30,18 +30,27 @@ import org.apache.camel.test.junit5.TestSupport;
 import org.apache.iotdb.isession.SessionConfig;
 import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
-import org.apache.iotdb.session.Session;
+import org.apache.iotdb.rpc.subscription.config.TopicConstant;
 import org.apache.iotdb.session.subscription.SubscriptionSession;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.tsfile.write.record.Tablet;
+import org.apache.tsfile.write.schema.MeasurementSchema;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSubscriptionComponent;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IoTDBTestSupport extends CamelTestSupport {
+    private static final Logger LOG = LoggerFactory.getLogger(IoTDBTestSupport.class);
 
     @RegisterExtension
     public static IoTDBService service = IoTDBServiceFactory.createService();
@@ -57,29 +66,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         TestSupport.loadExternalPropertiesQuietly(properties, IoTDBTestSupport.class, TEST_OPTIONS_PROPERTIES);
     }
 
-    @BeforeAll
-    public static void createTimeseriesAndTopic() {
-        try (Session session = new Session(service.host(), service.port(), "root", "root")) {
-            session.open();
-            session.setStorageGroup("root.test");
-            session.createTimeseries(
-                    "root.test.demo_device.rain", TSDataType.DOUBLE, TSEncoding.GORILLA_V1, CompressionType.ZSTD);
-
-        } catch (IoTDBConnectionException | StatementExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private IoTDBSessionConfiguration sessionCfg;
-
-    public void doInSession(SessionFnConsumer sessionConsumer) {
-        try (SubscriptionSession session = getSession()) {
-            session.open();
-            sessionConsumer.accept(session);
-        } catch (IoTDBConnectionException | StatementExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     protected CamelContext createCamelContext() throws Exception {
@@ -92,6 +79,112 @@ public class IoTDBTestSupport extends CamelTestSupport {
         context.addComponent("iotdb-subscription", comp);
 
         return context;
+    }
+
+    protected void createTopicQuietly(String topicName, String path) {
+        try {
+            doInSession(session -> {
+                Properties props = new Properties();
+                props.setProperty(TopicConstant.PATH_KEY, path);
+                props.setProperty(TopicConstant.FORMAT_KEY, TopicConstant.FORMAT_SESSION_DATA_SETS_HANDLER_VALUE);
+                session.createTopicIfNotExists(topicName, props);
+                LOG.debug("Created topic '{}' for path: '{}'", topicName, path);
+            });
+        } catch (RuntimeException e) {
+            LOG.warn("Error creating topic '{}' for path '{}': {}", topicName, path, e.getMessage());
+        }
+    }
+
+    protected void dropTopicQuietly(String topicName) {
+        try {
+            doInSession(session -> {
+                session.dropTopic(topicName);
+                LOG.debug("Cleaned up topic: {}", topicName);
+            });
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Topic [" + topicName + "] does not exist")) {
+                // Topic already gone, which is fine for cleanup
+                LOG.debug("Topic '{}' did not exist or already dropped.", topicName);
+            } else {
+                LOG.warn("Error dropping topic {}: {}", topicName, e.getMessage());
+            }
+        }
+    }
+
+    protected void removeTimeseriesPathQuietly(String timeSeriesPath) {
+        final int lastDotIndex = timeSeriesPath.lastIndexOf(".");
+        final String devicePath = timeSeriesPath.substring(0, lastDotIndex);
+
+        try {
+            doInSession(session -> {
+                session.deleteTimeseries(devicePath);
+                LOG.debug("Removed timeseries with path: {}", timeSeriesPath);
+            });
+        } catch (RuntimeException e) {
+            LOG.warn("Error removing timeseries {}: {}", timeSeriesPath, e.getMessage());
+        }
+    }
+
+    protected void createTimeseriesPathQuietly(String timeSeriesPath) {
+        try {
+            doInSession(session -> {
+                if (session.checkTimeseriesExists(timeSeriesPath)) {
+                    LOG.debug("Timeseries with path {} already exists", timeSeriesPath);
+                    return;
+                }
+                session.createTimeseries(
+                        timeSeriesPath, TSDataType.DOUBLE, TSEncoding.GORILLA_V1, CompressionType.ZSTD);
+            });
+        } catch (RuntimeException e) {
+            LOG.warn("Error creating timeseries {}: {}", timeSeriesPath, e.getMessage());
+        }
+    }
+
+    protected void generateDataPoints(String timeSeriesPath, int size, double min, double max) {
+        final int lastDotIndex = timeSeriesPath.lastIndexOf(".");
+        final String devicePath = timeSeriesPath.substring(0, lastDotIndex);
+        final String measureVariable = timeSeriesPath.substring(lastDotIndex + 1);
+
+        List<MeasurementSchema> schemaList = new ArrayList<>();
+        schemaList.add(new MeasurementSchema(measureVariable, TSDataType.DOUBLE));
+        Tablet tablet = new Tablet(devicePath, schemaList, size);
+
+        long timestamp = System.currentTimeMillis();
+        for (int i = 0; i < size; i++) {
+            int rowIndex = tablet.rowSize++;
+            tablet.addTimestamp(rowIndex, timestamp++);
+            double value = min;
+            if (min < max) {
+                value = ThreadLocalRandom.current().nextDouble(min, max == Double.MAX_VALUE ? max : Math.nextUp(max));
+            }
+            tablet.addValue(schemaList.get(0).getMeasurementId(), rowIndex, value);
+        }
+
+        try {
+            doInSession(session -> {
+                if (tablet.rowSize != 0) {
+                    session.insertTablet(tablet);
+                    LOG.info(
+                            "Added {} data points for {} {}: {}",
+                            tablet.rowSize,
+                            devicePath,
+                            tablet.getSchemas(),
+                            tablet.values);
+                }
+                tablet.reset();
+            });
+        } catch (RuntimeException e) {
+            LOG.warn("Error adding data point fot timeseries {}: {}", timeSeriesPath, e.getMessage());
+        }
+    }
+
+    public void doInSession(SessionFnConsumer sessionConsumer) {
+        try (SubscriptionSession session = getSubscriptionSession()) {
+            session.open();
+            sessionConsumer.accept(session);
+        } catch (IoTDBConnectionException | StatementExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Map<String, Object> getIoTDBSessionCfgMap() {
@@ -111,7 +204,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         return options;
     }
 
-    private SubscriptionSession getSession() {
+    private SubscriptionSession getSubscriptionSession() {
         return new SubscriptionSession(
                 sessionCfg.host(),
                 sessionCfg.port(),
@@ -120,31 +213,10 @@ public class IoTDBTestSupport extends CamelTestSupport {
                 SessionConfig.DEFAULT_MAX_FRAME_SIZE);
     }
 
-    @AfterAll
-    void shutdownService() {
-        service.shutdown();
+    @Override
+    @AfterEach
+    public void cleanupResources() {
+        context.stop();
+        context.shutdown();
     }
-
-    //    void testCreateAndConsume() throws Exception {
-    //        // 5)  Insert a record directly via IoTDB Session
-    //                try (Session session = new Session("localhost", 6667, "root", "root")) {
-    //                    session.open();
-    //                    session.setStorageGroup("root.test");
-    //                    session.createTimeseries(
-    //                            "root.test.demo_device.rain", TSDataType.DOUBLE, TSEncoding.GORILLA_V1,
-    //         CompressionType.ZSTD);
-    //
-    //                    session.insertRecord(
-    //                            "root.test.demo_device",
-    //                            Instant.now().toEpochMilli(),
-    //                            List.of("rain"),
-    //                            List.of(TSDataType.DOUBLE),
-    //                            List.of(10));
-    //                }
-    //
-    //        // 6)  Assert that the consumer route got at least one Exchange
-    //         MockEndpoint mock = getMockEndpoint("mock:result");
-    //         mock.expectedMinimumMessageCount(1);
-    //         mock.assertIsSatisfied(10_000);
-    //    }
 }

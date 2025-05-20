@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.github.alessandrofrenna.camel.component.iotdb;
 
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -31,8 +32,11 @@ import java.util.Map;
 
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 public class IoTDBTopicConsumerManagerTest {
     // A small subclass for testing that returns a mocked consumer
@@ -64,55 +68,117 @@ public class IoTDBTopicConsumerManagerTest {
         }
     }
 
-    private TestableManager consumerManager;
+    private AutoCloseable closeable;
+
+    @Mock
     private ConsumeListener consumeListener;
+
     private IoTDBTopicConsumerConfiguration topicConsumerConfiguration;
+
+    private TestableManager consumerManager;
+    private Map<PushConsumerKey, SubscriptionPushConsumer> consumerRegistry;
 
     @BeforeEach
     void setUp() {
-        consumeListener = mock(ConsumeListener.class);
+        closeable = MockitoAnnotations.openMocks(this);
+
         topicConsumerConfiguration = new IoTDBTopicConsumerConfiguration();
         topicConsumerConfiguration.setGroupId("group_a");
         topicConsumerConfiguration.setConsumerId("consumer_a");
         consumerManager = new TestableManager(new IoTDBSessionConfiguration("h", 1234, "u", "p"));
+        consumerRegistry = getField(consumerManager, "consumerRegistry");
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        closeable.close();
+        consumerRegistry.clear();
     }
 
     @Test
-    void creating_multiple_consumer_with_the_same_key_returns_the_same_consumer() {
-        Map<?, ?> registry = getField(consumerManager, "consumerRegistry");
+    void creating_multiple_consumers_with_the_same_key_should_produce_the_same_consumer() {
+        final PushConsumerKey consumerKey = new PushConsumerKey(
+                topicConsumerConfiguration.getGroupId().get(),
+                topicConsumerConfiguration.getConsumerId().get());
+
         var c1 = consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
         var c2 = consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+
         assertSame(consumerManager.mockConsumer, c1, "First call should return our mock");
         assertSame(consumerManager.mockConsumer, c2, "Second call with same key should return same mock");
-        assertEquals(1, registry.size(), "Exactly one key registered");
+        assertEquals(1, consumerRegistry.size(), "Exactly one key registered");
+        assertTrue(consumerRegistry.containsKey(consumerKey));
     }
 
     @Test
-    void destroying_an_existing_push_consumer_call_close_and_remove_the_consumer() {
-        Map<?, ?> registry = getField(consumerManager, "consumerRegistry");
+    void creating_multiple_consumers_with_different_keys_should_produce_different_consumers() {
+        IoTDBTopicConsumerConfiguration secondCfg = new IoTDBTopicConsumerConfiguration();
+        secondCfg.setGroupId("group_b");
+        secondCfg.setConsumerId("consumer_b");
+
         consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
-        assertEquals(1, registry.size(), "Exactly one key registered");
-        // verify we called close() exactly once
-        var key = new IoTDBTopicConsumerManager.PushConsumerKey("group_a", "consumer_a");
-        consumerManager.destroyPushConsumer(key);
-        verify(consumerManager.mockConsumer, times(1)).close();
-        assertTrue(registry.isEmpty(), "Registry must be cleared after destroyPushConsumer");
+        SubscriptionPushConsumer result = consumerManager.createPushConsumer(secondCfg, consumeListener);
+
+        final PushConsumerKey firstConsumerKey = new PushConsumerKey(
+                topicConsumerConfiguration.getGroupId().get(),
+                topicConsumerConfiguration.getConsumerId().get());
+        final PushConsumerKey secondConsumerKey = new PushConsumerKey(
+                secondCfg.getGroupId().get(), secondCfg.getConsumerId().get());
+        assertEquals(2, consumerRegistry.size());
+        assertTrue(consumerRegistry.containsKey(firstConsumerKey));
+        assertTrue(consumerRegistry.containsKey(secondConsumerKey));
+        assertSame(consumerManager.mockConsumer, consumerRegistry.get(firstConsumerKey));
+        assertSame(consumerManager.mockConsumer, consumerRegistry.get(secondConsumerKey));
+    }
+
+    @Test
+    void destroy_push_consumer_should_invoke_close_method_and_remove_from_the_registry() {
+        final PushConsumerKey consumerKey = new PushConsumerKey(
+                topicConsumerConfiguration.getGroupId().get(),
+                topicConsumerConfiguration.getConsumerId().get());
+        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+        consumerManager.destroyPushConsumer(consumerKey);
+        verify(consumerManager.mockConsumer).close();
+        assertFalse(consumerRegistry.containsKey(consumerKey));
+        assertTrue(consumerRegistry.isEmpty(), "Registry must be cleared after destroyPushConsumer");
+    }
+
+    @Test
+    void destroy_push_consumer_with_a_non_existing_consumer_key_should_do_nothing() {
+        PushConsumerKey missingKey = new PushConsumerKey(null, null);
+        consumerManager.destroyPushConsumer(missingKey);
+        assertTrue(consumerRegistry.isEmpty());
+    }
+
+    @Test
+    void destroy_push_consumer_when_subscribed_to_multiple_topic_should_throw_exception_and_is_not_removed() {
+        final PushConsumerKey consumerKey = new PushConsumerKey(
+                topicConsumerConfiguration.getGroupId().get(),
+                topicConsumerConfiguration.getConsumerId().get());
+        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+
+        doThrow(new IllegalStateException("Close failed"))
+                .when(consumerManager.mockConsumer)
+                .close();
+        consumerManager.destroyPushConsumer(consumerKey);
+
+        verify(consumerManager.mockConsumer).close();
+        assertFalse(consumerRegistry.isEmpty());
+        assertTrue(consumerRegistry.containsKey(consumerKey));
     }
 
     @Test
     void clear_all_destroys_all_registered_consumers() {
-        Map<?, ?> registry = getField(consumerManager, "consumerRegistry");
         // register two different keys
-        var topicConsumerConfiguration2 = new IoTDBTopicConsumerConfiguration();
-        topicConsumerConfiguration2.setGroupId("group_b");
-        topicConsumerConfiguration2.setConsumerId("consumer_b");
+        var secondCfg = new IoTDBTopicConsumerConfiguration();
+        secondCfg.setGroupId("group_b");
+        secondCfg.setConsumerId("consumer_b");
 
         consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
-        consumerManager.createPushConsumer(topicConsumerConfiguration2, consumeListener);
-        assertEquals(2, registry.size(), "Exactly one key registered");
+        consumerManager.createPushConsumer(secondCfg, consumeListener);
+        consumerManager.close();
 
-        consumerManager.clearAll();
-        verify(consumerManager.mockConsumer, atLeast(2)).close();
-        assertTrue(registry.isEmpty(), "Registry must be empty after clearAll");
+        verify(consumerManager.mockConsumer, times(2)).close();
+        assertTrue(consumerRegistry.isEmpty(), "Registry must be empty after clearAll");
     }
 }

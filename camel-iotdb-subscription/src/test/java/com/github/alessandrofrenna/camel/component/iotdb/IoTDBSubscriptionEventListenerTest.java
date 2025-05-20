@@ -14,18 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-import org.apache.camel.impl.event.RouteRemovedEvent;
+import org.apache.camel.Endpoint;
+import org.apache.camel.Route;
 import org.apache.camel.spi.CamelEvent;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
@@ -33,60 +34,86 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
 public class IoTDBSubscriptionEventListenerTest {
+
+    private AutoCloseable closeable;
+
+    @Mock
     private IoTDBRoutesRegistry registry;
-    private IoTDBSubscriptionEventListener listener;
+
+    @InjectMocks
+    private IoTDBSubscriptionEventListener eventListener;
 
     @BeforeEach
     void setUp() {
-        registry = mock(IoTDBRoutesRegistry.class);
-        listener = new IoTDBSubscriptionEventListener(registry);
+        closeable = MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        closeable.close();
     }
 
     @Test
-    void when_consumer_subscribes_a_route_is_registered() {
-        var event = mock(IoTDBTopicConsumerSubscribed.class);
-        listener.notify(event);
-        verify(registry).registerRouteAfterConsumerSubscription(event);
-        verifyNoMoreInteractions(registry);
+    void when_subscribed_event_is_published_the_registry_should_handle_the_event() {
+        final IoTDBTopicConsumerSubscribed subscribedEvent = mock(IoTDBTopicConsumerSubscribed.class);
+        eventListener.notify(subscribedEvent);
+        verify(registry).registerRouteAfterConsumerSubscription(subscribedEvent);
     }
 
     @Test
-    void when_all_on_topic_consumer_are_stopped_routes_should_stop() {
-        var event = mock(IoTDBStopAllTopicConsumers.class);
-        listener.notify(event);
-        verify(registry).stopAllConsumedTopicRoutes(event);
-        verifyNoMoreInteractions(registry);
+    void when_stop_all_event_is_published_the_registry_should_handle_the_event() {
+        final IoTDBStopAllTopicConsumers stopAllEvent = mock(IoTDBStopAllTopicConsumers.class);
+        eventListener.notify(stopAllEvent);
+        verify(registry).stopAllConsumedTopicRoutes(stopAllEvent);
     }
 
     @Test
-    void when_a_topic_is_dropped_routes_should_be_removed() {
-        var dropEvent = mock(IoTDBTopicDropped.class);
-        var removeEvent = mock(CamelEvent.RouteRemovedEvent.class);
-        listener.notify(dropEvent);
-        verify(registry).removeRoutesAfterTopicDrop(dropEvent);
-        verifyNoMoreInteractions(registry);
+    void when_topic_dropped_event_is_published_the_registry_should_handle_the_event() {
+        final IoTDBTopicDropped topicDroppedEvent = mock(IoTDBTopicDropped.class);
+        eventListener.notify(topicDroppedEvent);
+        verify(registry).removeRoutesAfterTopicDrop(topicDroppedEvent);
     }
 
     @Test
-    void when_resume_all_topic_consumers_routes_should_be_resumed() {
-        var event = mock(IoTDBResumeAllTopicConsumers.class);
-        listener.notify(event);
-        verify(registry).resumeAllStoppedConsumedTopicRoutes(event);
-        verifyNoMoreInteractions(registry);
+    void when_resume_all_event_is_published_the_registry_should_handle_the_event() {
+        final IoTDBResumeAllTopicConsumers resumeAllStoppedEvent = mock(IoTDBResumeAllTopicConsumers.class);
+        eventListener.notify(resumeAllStoppedEvent);
+        verify(registry).resumeAllStoppedConsumedTopicRoutes(resumeAllStoppedEvent);
     }
 
     @Test
-    void when_routes_removed_from_camel_mappings_are_removed_from_registry() {
-        // prepare a fake endpoint with topic & routeId
-        var endpoint = mock(IoTDBTopicEndpoint.class);
-        when(endpoint.getTopic()).thenReturn("rain_topic");
-        var route = mock(org.apache.camel.Route.class);
+    void when_removed_route_event_is_published_the_registry_should_handle_the_event() {
+        final String TOPIC_NAME = "topic1";
+        final String ROUTE_ID = "routeId1";
+
+        final Route route = mock(Route.class);
+        final CamelEvent.RouteRemovedEvent routeRemovedEvent = mock(CamelEvent.RouteRemovedEvent.class);
+        final IoTDBTopicEndpoint topicEndpoint = mock(IoTDBTopicEndpoint.class);
+        when(routeRemovedEvent.getRoute()).thenReturn(route);
+        when(route.getRouteId()).thenReturn(ROUTE_ID);
+        when(route.getEndpoint()).thenReturn(topicEndpoint);
+        when(topicEndpoint.getTopic()).thenReturn(TOPIC_NAME);
+
+        eventListener.notify(routeRemovedEvent);
+        verify(registry).removeTopicMappedRoutes(TOPIC_NAME, ROUTE_ID);
+    }
+
+    @Test
+    void removed_route_from_any_other_endpoint_should_not_be_handled() {
+        final Route route = mock(Route.class);
+        final CamelEvent.RouteRemovedEvent routeRemovedEvent = mock(CamelEvent.RouteRemovedEvent.class);
+        final Endpoint endpoint = mock(Endpoint.class); // Not an IoTDBTopicEndpoint
+        when(routeRemovedEvent.getRoute()).thenReturn(route);
         when(route.getEndpoint()).thenReturn(endpoint);
-        when(route.getRouteId()).thenReturn("rain_topic_route");
-        CamelEvent.RouteRemovedEvent event = new RouteRemovedEvent(route);
 
-        listener.notify(event);
-        verify(registry).removeTopicMappedRoutes("rain_topic", "rain_topic_route");
-        verifyNoMoreInteractions(registry);
+        eventListener.notify(routeRemovedEvent);
+        verify(registry, never()).removeTopicMappedRoutes(anyString(), anyString());
+    }
+
+    @Test
+    void any_other_event_should_not_be_handled() {
+        CamelEvent unrelatedEvent = mock(CamelEvent.class); // An event not handled by the listener
+        eventListener.notify(unrelatedEvent);
+        verifyNoInteractions(registry); // No methods on registry should be called
     }
 }
