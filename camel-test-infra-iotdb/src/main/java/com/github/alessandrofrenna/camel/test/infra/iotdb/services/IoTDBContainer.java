@@ -19,6 +19,7 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.*;
 
 import java.util.Optional;
+
 import org.apache.camel.test.infra.common.LocalPropertyResolver;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;

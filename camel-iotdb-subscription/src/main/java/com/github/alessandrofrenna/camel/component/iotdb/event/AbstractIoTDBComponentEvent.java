@@ -19,6 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb.event;
 
 import java.util.EventObject;
 import java.util.Objects;
+
 import org.apache.camel.spi.CamelEvent;
 
 /**

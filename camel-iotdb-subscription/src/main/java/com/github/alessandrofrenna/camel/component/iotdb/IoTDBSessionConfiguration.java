@@ -25,10 +25,10 @@ package com.github.alessandrofrenna.camel.component.iotdb;
  * @param password of the user
  */
 public record IoTDBSessionConfiguration(String host, int port, String user, String password) {
-    static final String DEFAULT_HOST = "localhost";
-    static final String DEFAULT_PORT = "6667";
-    static final String DEFAULT_USERNAME = "root";
-    static final String DEFAULT_PASSWORD = "root";
+    public static final String DEFAULT_HOST = "localhost";
+    public static final String DEFAULT_PORT = "6667";
+    public static final String DEFAULT_USERNAME = "root";
+    public static final String DEFAULT_PASSWORD = "root";
 
     /** Create a <b>IoTDBSessionConfiguration</b> an IoTDB session with default properties. */
     public IoTDBSessionConfiguration() {
