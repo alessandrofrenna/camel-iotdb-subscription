@@ -20,6 +20,7 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +33,7 @@ import org.apache.camel.support.EventNotifierSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopicConsumers;
@@ -122,7 +124,18 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
                 1,
                 publishedEvents.get(IoTDBStopAllTopicConsumers.class),
                 "only 1 IoTDBStopAllTopicConsumers event was published");
-        assertTrue(publishedEvents.containsKey(IoTDBTopicDropped.class), "IoTDBTopicDropped events was published");
-        assertEquals(1, publishedEvents.get(IoTDBTopicDropped.class), "only 1 IoTDBTopicDropped event was published");
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(3))
+                .pollInterval(IoTDBTopicProducerConfiguration.PRE_DROP_DELAY)
+                .untilAsserted(() -> {
+                    assertTrue(
+                            publishedEvents.containsKey(IoTDBTopicDropped.class),
+                            "IoTDBTopicDropped events was published");
+                    assertEquals(
+                            1,
+                            publishedEvents.get(IoTDBTopicDropped.class),
+                            "only 1 IoTDBTopicDropped event was published");
+                });
     }
 }
