@@ -4,10 +4,12 @@ on:
     branches: ["main" ]
     paths-ignore:
       - 'README.md'
+      - 'jitpack.yml'
   pull_request:
     branches: ["main"]
     paths-ignore:
       - 'README.md'
+      - 'jitpack.yml'
 permissions:
   contents: read
 jobs:

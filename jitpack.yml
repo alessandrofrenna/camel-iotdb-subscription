@@ -6,5 +6,4 @@ before_install:
   - sdk install maven
   - mvn -v
 install:
-  - mvn -B clean install -DskipTests
-  - mvn test
+  - mvn -B clean install
