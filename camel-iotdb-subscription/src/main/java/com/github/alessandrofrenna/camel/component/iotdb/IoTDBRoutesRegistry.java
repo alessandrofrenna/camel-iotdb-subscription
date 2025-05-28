@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
+import org.apache.camel.Route;
 import org.apache.camel.ServiceStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,7 +153,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
             // Let's make our intent clear! Only started and yet stoppable routes could be stopped.
             // Already stopping or stopped routes don't require further processing
-            if (routeStatus.isStarted()
+            if (routeStatus != null && routeStatus.isStarted()
                     && routeStatus.isStoppable()
                     && !routeStatus.isStopping()
                     && !routeStatus.isStopped()) {
@@ -175,7 +176,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
             // Let's make our intent clear! Only stopped and yet startable routes could be restarted.
             // Already starting or started routes don't require further processing
-            if (routeStatus.isStopped()
+            if (routeStatus != null && routeStatus.isStopped()
                     && routeStatus.isStartable()
                     && !routeStatus.isStarting()
                     && !routeStatus.isStarted()) {
@@ -197,10 +198,15 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             final CamelContext ctx = getCamelContext();
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
             // Let's make our intent clear! Only stopped routes could be removed when calling this method
-            if (routeStatus.isStopped()) {
+            if (routeStatus != null && routeStatus.isStopped()) {
                 try {
                     PushConsumerKey consumerKey = null;
-                    if (ctx.getRoute(routeId).getConsumer() instanceof IoTDBTopicConsumer topicConsumer) {
+                    final Route route = ctx.getRoute(routeId);
+                    if (route == null) {
+                        LOG.warn("Route '{}' was not found in CamelContext during removal attempt. It might have been removed concurrently", routeId);
+                        return;
+                    }
+                    if (route.getConsumer() != null && route.getConsumer() instanceof IoTDBTopicConsumer topicConsumer) {
                         consumerKey = topicConsumer.getPushConsumerKey();
                     }
                     ctx.removeRoute(routeId);
