@@ -115,15 +115,6 @@
     <build>
         <defaultGoal>install</defaultGoal>
 
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire-plugin.version}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
             <!-- generate camel meta-data -->
             <plugin>
@@ -208,6 +199,15 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- surefire plugin -->
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <parallel>classes</parallel>
+                    <forkCount>4</forkCount>
+                </configuration>
             </plugin>
             <!-- spotless -->
             <plugin>
