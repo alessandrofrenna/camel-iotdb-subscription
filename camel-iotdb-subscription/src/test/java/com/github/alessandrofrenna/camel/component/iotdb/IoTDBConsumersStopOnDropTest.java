@@ -17,15 +17,10 @@
 
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.camel.ProducerTemplate;
-import org.apache.camel.Route;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.spi.CamelEvent;
 import org.apache.camel.spi.EventNotifier;
@@ -33,6 +28,7 @@ import org.apache.camel.support.EventNotifierSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBResumeAllTopicConsumers;
@@ -41,7 +37,14 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
 
-public class IotDBLifecycleTests extends IoTDBTestSupport {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@TestInstance(TestInstance.Lifecycle.PER_METHOD)
+public class IoTDBConsumersStopOnDropTest extends IoTDBTestSupport {
+    private final String TEMPERATURE_TOPIC = "temp_topic";
+    private final String RAIN_TOPIC = "rain_topic";
+
     private final Map<Class<? extends CamelEvent>, Integer> publishedEvents = new HashMap<>();
     private final EventNotifier eventNotifier = new EventNotifierSupport() {
         private void findAndIncrement(Class<? extends CamelEvent> evType) {
@@ -64,78 +67,53 @@ public class IotDBLifecycleTests extends IoTDBTestSupport {
             }
         }
     };
-    private ProducerTemplate producerTemplate;
 
     @BeforeEach
-    void init() throws Exception {
-        producerTemplate = context.createProducerTemplate();
-        context().getManagementStrategy().addEventNotifier(eventNotifier);
+    void setUpTestSuite() throws Exception {
+        final String TEMPERATURE_PATH = "root.test.demo_device_1.sensor_1.temperature";
+        final String RAIN_PATH = "root.test.demo_device_1.sensor_2.rain";
 
-        producerTemplate.sendBody("iotdb-subscription:rain_topic?action=create&path=root.test.demo_device.rain", null);
-        producerTemplate.sendBody(
-                "iotdb-subscription:temperature_topic?action=create&path=root.test.demo_device.temperature", null);
+        context().getManagementStrategy().addEventNotifier(eventNotifier);
+        createTimeseriesPathQuietly(TEMPERATURE_PATH);
+        createTimeseriesPathQuietly(RAIN_PATH);
+        createTopicQuietly(TEMPERATURE_TOPIC, TEMPERATURE_PATH);
+        createTopicQuietly(RAIN_TOPIC, RAIN_PATH);
+
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
-                from("iotdb-subscription:rain_topic?groupId=group_1&consumerId=first_consumer")
+                from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_1&consumerId=first_consumer")
                         .to("mock:consumer1");
-                from("iotdb-subscription:rain_topic?groupId=group_1&consumerId=second_consumer")
+                from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_1&consumerId=second_consumer")
                         .to("mock:consumer2");
-                from("iotdb-subscription:rain_topic?groupId=group_2&consumerId=first_consumer")
+                from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_2&consumerId=first_consumer")
                         .to("mock:consumer3");
-                from("iotdb-subscription:temperature_topic?groupId=group_1&consumerId=first_consumer")
+                from("iotdb-subscription:" + TEMPERATURE_TOPIC + "?groupId=group_1&consumerId=first_consumer")
                         .to("mock:consumer1");
             }
         });
     }
 
+    @Override
     @AfterEach
-    void tearDown() {
-        publishedEvents.clear();
-        producerTemplate.stop();
-        producerTemplate = null;
-
-        for (Route route : context.getRoutes()) {
-            try {
-                var routeId = route.getRouteId();
-                context.stop();
-                context.removeRoute(routeId);
-            } catch (Exception ignored) {
-                // NO-OP
-            }
-        }
-        context.getManagementStrategy().removeEventNotifier(eventNotifier);
+    public void cleanupResources() {
+        super.cleanupResources();
     }
 
     @Test
-    public void successful_topic_and_multiple_subscribers_creation_lifecycle() {
-        producerTemplate.sendBody("iotdb-subscription:rain_topic?action=drop", null);
-        assertTrue(
-                publishedEvents.containsKey(IoTDBTopicConsumerSubscribed.class),
-                "IoTDBTopicConsumerSubscribed events was published");
-        assertEquals(
-                4,
-                publishedEvents.get(IoTDBTopicConsumerSubscribed.class),
-                "4 IoTDBTopicConsumerSubscribed event was published");
-        assertTrue(
-                publishedEvents.containsKey(IoTDBStopAllTopicConsumers.class),
-                "IoTDBStopAllTopicConsumers events was published");
-        assertEquals(
-                1,
-                publishedEvents.get(IoTDBStopAllTopicConsumers.class),
-                "only 1 IoTDBStopAllTopicConsumers event was published");
+    public void when_topicDropOperationIsSuccessful_consumersShouldBeClosedAndRemoved() {
+        template.sendBody("iotdb-subscription:rain_topic?action=drop", null);
+        assertTrue(publishedEvents.containsKey(IoTDBTopicConsumerSubscribed.class));
+        assertEquals(4, publishedEvents.get(IoTDBTopicConsumerSubscribed.class));
+        assertTrue(publishedEvents.containsKey(IoTDBStopAllTopicConsumers.class));
+        assertEquals(1, publishedEvents.get(IoTDBStopAllTopicConsumers.class));
 
         Awaitility.await()
                 .atMost(Duration.ofSeconds(3))
                 .pollInterval(IoTDBTopicProducerConfiguration.PRE_DROP_DELAY)
                 .untilAsserted(() -> {
-                    assertTrue(
-                            publishedEvents.containsKey(IoTDBTopicDropped.class),
-                            "IoTDBTopicDropped events was published");
-                    assertEquals(
-                            1,
-                            publishedEvents.get(IoTDBTopicDropped.class),
-                            "only 1 IoTDBTopicDropped event was published");
+                    assertTrue(publishedEvents.containsKey(IoTDBTopicDropped.class));
+                    assertEquals(1, publishedEvents.get(IoTDBTopicDropped.class));
                 });
     }
 }
