@@ -11,7 +11,6 @@ At the moment only IoTDB v1.3.4 is supported. Newer version will be added soon.
 
 ## Installation
 This library is hosted on [https://jitpack.io](https://jitpack.io/#alessandrofrenna/camel-iotdb-subscription).</br>
-The javadoc for this library is available here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/1.0.0-SNAPSHOT/javadoc/com/github/alessandrofrenna/camel-iotdb-subscription/package-summary.html)
 
 ### Maven
 
@@ -33,29 +32,28 @@ Add this to your dependencies:
     <!-- other dependencies -->
 
     <dependency>
-        <groupId>com.github.alessandrofrenna</groupId>
+        <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-iotdb-subscription</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </dependency>
 </dependencies>
-
 ```
+The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-iotdb-subscription/1.0.0-SNAPSHOT/javadoc/) 
 
 If you want to use the `camel-test-infra-iotb` add this to your dependencies:
-
 ```xml
 <dependencies>
     <!-- other dependencies -->
     
     <dependency>
-        <groupId>com.github.alessandrofrenna</groupId>
+        <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <scope>test</scope>
     </dependency>
     
     <dependency>
-        <groupId>com.github.alessandrofrenna</groupId>
+        <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <type>test-jar</type>
@@ -63,6 +61,7 @@ If you want to use the `camel-test-infra-iotb` add this to your dependencies:
     </dependency>
 </dependencies>
 ```
+The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-test-infra-iotdb/1.0.0-SNAPSHOT/javadoc/)
 
 # Licensing
 This project is licensed under the [Apache License v2.0](https://www.apache.org/licenses/LICENSE-2.0).
