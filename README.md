@@ -63,6 +63,34 @@ If you want to use the `camel-test-infra-iotb` add this to your dependencies:
 ```
 The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-test-infra-iotdb/1.0.0-SNAPSHOT/javadoc/)
 
+### Gradle
+
+Add it in your root settings.gradle at the end of repositories:
+```
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+Add this to your dependencies:
+```
+dependencies {
+        implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:1.0.0-SNAPSHOT'
+}
+```
+
+If you want to use the `camel-test-infra-iotb` add this to your dependencies:
+```
+dependencies {
+        testImplementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-test-infra-iotdb:1.0.0-SNAPSHOT'
+}
+```
+
+
 # Licensing
 This project is licensed under the [Apache License v2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
