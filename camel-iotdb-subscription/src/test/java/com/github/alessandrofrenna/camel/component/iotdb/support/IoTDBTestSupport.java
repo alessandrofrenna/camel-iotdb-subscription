@@ -95,36 +95,6 @@ public class IoTDBTestSupport extends CamelTestSupport {
         }
     }
 
-    protected void dropTopicQuietly(String topicName) {
-        try {
-            doInSession(session -> {
-                session.dropTopic(topicName);
-                LOG.debug("Cleaned up topic: {}", topicName);
-            });
-        } catch (RuntimeException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Topic [" + topicName + "] does not exist")) {
-                // Topic already gone, which is fine for cleanup
-                LOG.debug("Topic '{}' did not exist or already dropped.", topicName);
-            } else {
-                LOG.warn("Error dropping topic {}: {}", topicName, e.getMessage());
-            }
-        }
-    }
-
-    protected void removeTimeseriesPathQuietly(String timeSeriesPath) {
-        final int lastDotIndex = timeSeriesPath.lastIndexOf(".");
-        final String devicePath = timeSeriesPath.substring(0, lastDotIndex);
-
-        try {
-            doInSession(session -> {
-                session.deleteTimeseries(devicePath);
-                LOG.debug("Removed timeseries with path: {}", timeSeriesPath);
-            });
-        } catch (RuntimeException e) {
-            LOG.warn("Error removing timeseries {}: {}", timeSeriesPath, e.getMessage());
-        }
-    }
-
     protected void createTimeseriesPathQuietly(String timeSeriesPath) {
         try {
             doInSession(session -> {
