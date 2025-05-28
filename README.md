@@ -9,6 +9,10 @@
 The IoTDB Subscription component is used to subscribe to topic inside IoTDB.</br>
 At the moment only IoTDB v1.3.4 is supported. Newer version will be added soon.
 
+## Installation
+This library is hosted on [https://jitpack.io](https://jitpack.io/#alessandrofrenna/camel-iotdb-subscription).</br>
+The javadoc for this library is available here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/1.0.0-SNAPSHOT/javadoc/com/github/alessandrofrenna/camel-iotdb-subscription/package-summary.html)
+
 ### Maven
 
 Enable the repository in your pom.xml:
