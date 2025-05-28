@@ -30,5 +30,4 @@ jobs:
           architecture: ${{ matrix.architecture }}
           cache: 'maven'
       - name: Install
-        run:
-          - mvn -B clean verify --file pom.xml
+        run: mvn -B clean verify --file pom.xml
