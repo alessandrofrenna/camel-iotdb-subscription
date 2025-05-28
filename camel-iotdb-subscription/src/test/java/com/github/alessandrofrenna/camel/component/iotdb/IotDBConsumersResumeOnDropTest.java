@@ -74,7 +74,9 @@ public class IotDBConsumersResumeOnDropTest extends IoTDBTestSupport {
         }
     };
 
-    private final static MockedConstruction<IoTDBTopicManager.Default> topicManagerMocker = mockConstruction(IoTDBTopicManager.Default.class, (mock, ctx) -> doThrow(RuntimeCamelException.class).when(mock).dropTopicIfExists(anyString()));
+    private static final MockedConstruction<IoTDBTopicManager.Default> topicManagerMocker = mockConstruction(
+            IoTDBTopicManager.Default.class,
+            (mock, ctx) -> doThrow(RuntimeCamelException.class).when(mock).dropTopicIfExists(anyString()));
 
     @BeforeEach
     void setUpTestSuite() throws Exception {

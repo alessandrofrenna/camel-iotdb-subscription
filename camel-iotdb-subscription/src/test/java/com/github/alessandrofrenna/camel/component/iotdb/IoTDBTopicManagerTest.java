@@ -98,8 +98,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void topicCreationShouldFail_onStatementExceptions()
-            throws IoTDBConnectionException, StatementExecutionException {
+    void topicCreationShouldFail_onStatementExceptions() throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
         String path = "root.test_device.test_variable";
 
@@ -163,8 +162,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void topicDropShouldFail_onStatementException()
-            throws IoTDBConnectionException, StatementExecutionException {
+    void topicDropShouldFail_onStatementException() throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
         doThrow(new StatementExecutionException("Execution failed"))
@@ -181,8 +179,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void topicDropShouldFail_onLossOfSessionConnection()
-            throws IoTDBConnectionException, StatementExecutionException {
+    void topicDropShouldFail_onLossOfSessionConnection() throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
         doThrow(new IoTDBConnectionException("Connection lost during drop"))

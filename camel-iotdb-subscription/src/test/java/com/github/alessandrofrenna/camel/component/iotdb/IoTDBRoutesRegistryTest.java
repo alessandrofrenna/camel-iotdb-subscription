@@ -279,7 +279,7 @@ class IoTDBRoutesRegistryTest {
         verify(camelContext, never()).removeRoute(anyString());
         verify(consumerManager, never()).destroyPushConsumer(any());
     }
-    
+
     @Test
     void callingDropAll_onANonExistingTopic_shouldNotEndUpWithACallOnRemoveRoute() throws Exception {
         IoTDBTopicDropped event = new IoTDBTopicDropped(new Object(), "missing_topic");

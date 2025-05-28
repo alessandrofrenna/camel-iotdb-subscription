@@ -148,7 +148,9 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
         MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
 
-        mockMultiResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
+        mockMultiResult1
+                .getReceivedExchanges()
+                .forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
         mockMultiResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
 
         routeController.stopRoute("multiConsumerARouteA");
@@ -212,5 +214,4 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
         }
         assertEquals(timeseriesCount, rowCount);
     }
-
 }

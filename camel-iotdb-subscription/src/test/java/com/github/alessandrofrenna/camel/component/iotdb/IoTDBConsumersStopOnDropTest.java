@@ -17,6 +17,9 @@
 
 package com.github.alessandrofrenna.camel.component.iotdb;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,9 +39,6 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopic
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
 public class IoTDBConsumersStopOnDropTest extends IoTDBTestSupport {

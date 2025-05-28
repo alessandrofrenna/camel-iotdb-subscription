@@ -26,7 +26,9 @@ import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 
 interface RoutedConsumeListener extends ConsumeListener {
     void routeConsumeListener(String topicId, ConsumeListener consumeListener);
+
     void removeRouted(String topicId);
+
     void clear();
 
     class Default implements RoutedConsumeListener {
@@ -54,5 +56,4 @@ interface RoutedConsumeListener extends ConsumeListener {
             return consumeListener.onReceive(message);
         }
     }
-
 }

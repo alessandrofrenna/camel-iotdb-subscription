@@ -13,3 +13,22 @@ This product includes software developed at
 [The Apache Software Foundation](https://www.apache.org/) such as:
 1. [Apache Camel](https://camel.apache.org/).
 2. [Apache IoTDB](https://iotdb.apache.org/).
+
+Testate
+IoTDBTopicProducer
+IoTDBTopicConsumer
+IoTDBTopicManager
+IoTDBTopicConsumerManager
+IoTDBRouteRegistry
+IoTDBSubscriptionEventListener
+
+Da non testare sono:
+IoTDBSessionConfiguration
+IoTDBTopicConsumerConfiguration
+IoTDBTopicProducerConfiguration
+TopicAwareConsumerListener
+IoTDBSubscriptionComponent
+IoTDTopicEndpoint
+
+Rimangono da testare
+RoutedConsumerListener
