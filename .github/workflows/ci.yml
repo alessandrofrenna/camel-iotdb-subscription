@@ -1,0 +1,35 @@
+name: Run CI tests with maven
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '17' ]
+        architecture: [ 'x64' ]
+    name: Build with JDK ${{ matrix.java }} on ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          cache: 'maven'
+      - name: Install
+        run: mvn -B clean install -DskipTests --file pom.xml
+      - name: Test
+        run: mvn test
