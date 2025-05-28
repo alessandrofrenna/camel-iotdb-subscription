@@ -14,7 +14,7 @@ This library is hosted on [https://jitpack.io](https://jitpack.io/#alessandrofre
 
 ### Maven
 
-Enable the repository in your pom.xml:
+Enable the repository in your `pom.xml`:
 ```xml
 <repositories>
     <!-- other repositories -->
@@ -65,7 +65,7 @@ The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/g
 
 ### Gradle
 
-Add it in your root settings.gradle at the end of repositories:
+Add it in your root `settings.gradle` at the end of repositories:
 ```
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -76,7 +76,7 @@ dependencyResolutionManagement {
 }
 ```
 
-Add this to your dependencies:
+Add this to your dependencies in `build.gradle`:
 ```
 dependencies {
         implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:1.0.0-SNAPSHOT'
