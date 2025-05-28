@@ -19,6 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
@@ -46,6 +48,7 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
 
     private final String TEMPERATURE_TOPIC = "temp_topic";
     private final String RAIN_TOPIC = "rain_topic";
+    private final String MISSING_TOPIC = "missing_topic";
 
     @BeforeEach
     void setUpTestSuite() {
@@ -194,6 +197,29 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
         Awaitility.await().atMost(Duration.ofMillis(500)).untilAsserted(() -> {
             assertEquals(2, context.getRoutes().size());
             assertNull(context.getRoute("tempConsumerARoute"));
+        });
+    }
+
+    @Test
+    void onSubscriptionException_theRouteShouldBeRemoved() throws Exception {
+        String MISSING_TOPIC_ROUTE_ID = "multiConsumerBRouteA";
+        assertNull(context().getRoute(MISSING_TOPIC_ROUTE_ID));
+
+        assertThrows(
+                RuntimeCamelException.class,
+                () -> context.addRoutes(new RouteBuilder() {
+                    @Override
+                    public void configure() {
+                        from("iotdb-subscription:" + MISSING_TOPIC + "?groupId=group_2&consumerId=multi_b")
+                                .routeId(MISSING_TOPIC_ROUTE_ID)
+                                .to("mock:fail");
+                    }
+                }));
+
+        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> {
+            var routeStatus = context.getRouteController().getRouteStatus(MISSING_TOPIC_ROUTE_ID);
+            assertNotNull(routeStatus);
+            assertTrue(routeStatus.isStopped());
         });
     }
 

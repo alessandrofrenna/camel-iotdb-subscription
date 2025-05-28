@@ -23,7 +23,6 @@ import org.apache.camel.Processor;
 import org.apache.camel.Route;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.DefaultConsumer;
-import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 import org.apache.iotdb.session.subscription.consumer.ConsumeResult;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
@@ -44,7 +43,6 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
  * </ol>
  */
 class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
-    static final String MESSAGE_HEADER_KEY = "CommitContext";
     private final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
 
     private final IoTDBTopicEndpoint endpoint;
@@ -81,16 +79,25 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     }
 
     @Override
-    protected void doStart() throws Exception {
+    protected void doStart() {
         final String topic = endpoint.getTopic();
         var consumeListener = new TopicAwareConsumeListener(endpoint.getTopic(), this.defaultConsumeListener());
         pushConsumer = consumerManager.createPushConsumer(endpoint.getConsumerCfg(), consumeListener);
-        pushConsumer.open();
-        pushConsumer.subscribe(topic);
-        publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, getRouteId()));
-        LOG.info("IoTDBTopicConsumer consumer started and subscribed to event published for '{}' IOTDB topic", topic);
 
-        super.doStart();
+        try {
+            super.doStart();
+            pushConsumer.open();
+            pushConsumer.subscribe(topic);
+            publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, getRouteId()));
+            LOG.info(
+                    "IoTDBTopicConsumer consumer started and subscribed to event published for '{}' IOTDB topic",
+                    topic);
+        } catch (Exception e) {
+            String message = String.format(
+                    "IoTDBTopicConsumer consumer subscription to topic with name '%s' failed: %s",
+                    topic, e.getMessage());
+            doFail(new RuntimeCamelException(message, e));
+        }
     }
 
     @Override
@@ -105,8 +112,7 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
             LOG.debug("Unsubscribing IoTDB push consumer for topic: '{}'", endpoint.getTopic());
             pushConsumer.unsubscribe(topic);
             pushConsumer.close();
-            LOG.info("Unsubscribed and closed IoTDB push consumer for topic: '{}'", topic);
-        } catch (IllegalStateException | SubscriptionException e) {
+        } catch (IllegalStateException e) {
             LOG.info("Cannot unsubscribe/close from topic '{}': {}", topic, e.getMessage());
         }
         super.doStop();
@@ -116,10 +122,7 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
         return message -> {
             final Exchange exchange = endpoint.createExchange();
             final Processor processor = getProcessor();
-
-            exchange.getIn().setHeader(MESSAGE_HEADER_KEY, message.getCommitContext());
             exchange.getIn().setBody(message);
-
             try {
                 getProcessor().process(exchange);
                 if (exchange.getException() != null) {
