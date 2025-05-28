@@ -27,7 +27,7 @@ import org.apache.camel.spi.UriParams;
 /** The <b>IoTDBTopicProducerConfiguration</b> class keeps track of the uri parameters used by the producer. */
 @UriParams
 public class IoTDBTopicProducerConfiguration {
-    static final Duration PRE_DROP_DELAY = Duration.of(25, ChronoUnit.MILLIS);
+    static final Duration PRE_DROP_DELAY = Duration.of(150, ChronoUnit.MILLIS);
 
     @UriParam
     @Metadata(
