@@ -94,7 +94,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void route_registration_after_subscription_event_should_succeed() {
+    void routeRegistration_afterSubscriptionEvent_shouldSucceed() {
         IoTDBTopicConsumerSubscribed event = new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1);
         routesRegistry.registerRouteAfterConsumerSubscription(event);
         assertEquals(1, routesIdByTopicSpy.size());
@@ -104,7 +104,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void route_registration_after_subscription_events_for_the_same_topic_should_succeed() {
+    void routeRegistrationForTheSameTopic_afterSubscriptionEvent_shouldSucceed() {
         IoTDBTopicConsumerSubscribed event1 = new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1);
         IoTDBTopicConsumerSubscribed event2 = new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_2);
         routesRegistry.registerRouteAfterConsumerSubscription(event1);
@@ -118,7 +118,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void route_registration_after_subscription_events_for_different_topics_should_succeed() {
+    void routeRegistrationForDifferentTopics_afterSubscriptionEvents_shouldSucceed() {
         IoTDBTopicConsumerSubscribed event1 = new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1);
         IoTDBTopicConsumerSubscribed event2 = new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_2, ROUTE_ID_3);
         routesRegistry.registerRouteAfterConsumerSubscription(event1);
@@ -134,7 +134,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_status_is_valid_route_should_stop() throws Exception {
+    void when_statusIsValid_routeShouldStop() throws Exception {
         // simulate a started & stoppable route
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
@@ -158,7 +158,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_status_is_not_valid_route_stop_should_be_skipped() throws Exception {
+    void when_statusIsNotValid_routeStopShouldBeSkipped() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
 
@@ -169,7 +169,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void test_stop_of_routes_of_the_same_topic_with_different_statuses() throws Exception {
+    void stopRoutesOfConsumersOnTheSameTopic_withRoutesOnDifferentStatuses() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.registerRouteAfterConsumerSubscription(
@@ -187,14 +187,14 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void calling_stop_all_for_a_topic_that_does_not_exist() throws Exception {
+    void stoppingAllRoutes_ofATopicThatDoesNotExist_shouldSucceedBecauseNothingShouldBeDone() throws Exception {
         IoTDBStopAllTopicConsumers event = new IoTDBStopAllTopicConsumers(new Object(), "missing_topic");
         routesRegistry.stopAllConsumedTopicRoutes(event);
         verify(routeController, never()).stopRoute(anyString());
     }
 
     @Test
-    void when_status_is_valid_route_should_restart() throws Exception {
+    void when_statusIsValid_routeShouldRestart() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.registerRouteAfterConsumerSubscription(
@@ -217,7 +217,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_status_is_not_valid_route_restart_is_skipped() throws Exception {
+    void when_statusIsNotValid_routeRestartIsSkipped() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_2, ROUTE_ID_3));
         when(routeController.getRouteStatus(ROUTE_ID_3)).thenReturn(ServiceStatus.Started);
@@ -229,7 +229,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void test_resume_of_routes_of_the_same_topic_with_different_statuses() throws Exception {
+    void resumingRoutesOfConsumerOnTheSameTopic_withRoutesOnDifferentStatuses() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.registerRouteAfterConsumerSubscription(
@@ -246,14 +246,14 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void calling_resume_all_for_a_topic_that_does_not_exist() throws Exception {
+    void callingResumeAll_forATopicThatDoesNotExist_shouldNeverResultInACallOfStartRoute() throws Exception {
         IoTDBResumeAllTopicConsumers event = new IoTDBResumeAllTopicConsumers(new Object(), "missing_topic");
         routesRegistry.resumeAllStoppedConsumedTopicRoutes(event);
         verify(routeController, never()).startRoute(anyString());
     }
 
     @Test
-    void when_topic_is_dropped_routes_should_be_removed_close_and_consumers_destroyed() throws Exception {
+    void when_topicIsDropped_routesShouldBeRemoved_andConsumersShouldBeClosedAndDestroyed() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         when(routeController.getRouteStatus(ROUTE_ID_1)).thenReturn(ServiceStatus.Stopped); // Removable
@@ -269,7 +269,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_topic_is_dropped_with_non_stopped_routes_nothing_should_be_done() throws Exception {
+    void when_topicIsDroppedWithNonStoppedRoutes_nothingShouldBeDone() throws Exception {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         when(routeController.getRouteStatus(ROUTE_ID_1)).thenReturn(ServiceStatus.Started);
@@ -279,16 +279,16 @@ class IoTDBRoutesRegistryTest {
         verify(camelContext, never()).removeRoute(anyString());
         verify(consumerManager, never()).destroyPushConsumer(any());
     }
-
+    
     @Test
-    void calling_drop_all_for_a_topic_that_does_not_exist() throws Exception {
+    void callingDropAll_onANonExistingTopic_shouldNotEndUpWithACallOnRemoveRoute() throws Exception {
         IoTDBTopicDropped event = new IoTDBTopicDropped(new Object(), "missing_topic");
         routesRegistry.removeRoutesAfterTopicDrop(event);
         verify(camelContext, never()).removeRoute(anyString());
     }
 
     @Test
-    void remove_topic_with_routes_should_remove_a_single_route_entry_from_the_map() {
+    void when_aTopicWithDifferentMappedRoutesIsRemoved_onlyTheRouteShouldBeRemovedFromTheRegistry() {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.registerRouteAfterConsumerSubscription(
@@ -305,7 +305,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void remove_topic_with_single_mapped_route_should_remove_entry_from_the_map() {
+    void when_aTopicWithASingleMappedRouteIsRemoved_itsEntryShouldBeRemovedFromTheRegistry() {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.removeTopicMappedRoutes(TOPIC_1, ROUTE_ID_1);
@@ -315,7 +315,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void calling_remove_topic_routes_for_a_topic_that_does_not_exist() {
+    void callingRemoveTopicRoutes_onANonExistingTopic_shouldNotChangeTheRegistry() {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.removeTopicMappedRoutes(TOPIC_1, "missing_topic");
@@ -326,7 +326,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void clear_all_should_clear_the_map() {
+    void clearAll_shouldClearTheMap() {
         routesRegistry.registerRouteAfterConsumerSubscription(
                 new IoTDBTopicConsumerSubscribed(new Object(), TOPIC_1, ROUTE_ID_1));
         routesRegistry.registerRouteAfterConsumerSubscription(
@@ -338,12 +338,12 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void creating_registry_with_null_consumer_manager_should_throw_exception() {
+    void creatingTheRegistry_withANullConsumerManager_shouldThrowAnException() {
         assertThrows(NullPointerException.class, () -> new IoTDBRoutesRegistry.Default(null));
     }
 
     @Test
-    void when_camel_context_is_null_get_context_should_throw_exception() {
+    void when_camelContextIsNull_getContext_shouldThrowAnException() {
         IoTDBRoutesRegistry.Default newRegistry = new IoTDBRoutesRegistry.Default(consumerManager);
         assertThrows(IllegalStateException.class, newRegistry::getCamelContext);
     }
@@ -351,7 +351,7 @@ class IoTDBRoutesRegistryTest {
     // --- Tests for stopRoute, restartRoute, removeStopped internal helper methods ---
 
     @Test
-    void when_call_to_route_controller_stop_route_fails_registry_stop_route_should_not_throw() throws Exception {
+    void when_routeControllerStopRouteFails_registryStopRouteCall_shouldNotThrow() throws Exception {
         when(routeController.getRouteStatus(ROUTE_ID_1)).thenReturn(ServiceStatus.Started);
         doThrow(new Exception("Simulated stop error")).when(routeController).stopRoute(ROUTE_ID_1);
         assertDoesNotThrow(() -> routesRegistry.stopRoute(ROUTE_ID_1));
@@ -359,7 +359,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_call_to_route_controller_start_route_fails_registry_restart_route_should_not_throw() throws Exception {
+    void when_routeControllerStartRouteFails_registryRestartRouteCall_shouldNotThrow() throws Exception {
         when(routeController.getRouteStatus(ROUTE_ID_1)).thenReturn(ServiceStatus.Stopped);
         doThrow(new Exception("Simulated start error")).when(routeController).startRoute(ROUTE_ID_1);
 
@@ -368,7 +368,7 @@ class IoTDBRoutesRegistryTest {
     }
 
     @Test
-    void when_call_to_route_controller_remove_route_fails_registry_remove_stopped_should_not_throw() throws Exception {
+    void when_routeControllerRemoveRouteFails_registryRemoveStopped_shouldNotThrow() throws Exception {
         when(routeController.getRouteStatus(ROUTE_ID_1)).thenReturn(ServiceStatus.Stopped);
         when(camelContext.getRoute(ROUTE_ID_1)).thenReturn(route);
         when(route.getConsumer()).thenReturn(mock(org.apache.camel.Consumer.class)); // Generic

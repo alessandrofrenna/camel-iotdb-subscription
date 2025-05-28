@@ -33,17 +33,16 @@ import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
 import org.apache.iotdb.rpc.subscription.config.TopicConstant;
 import org.apache.iotdb.session.subscription.SubscriptionSession;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class IoTDBTopicManagerTest {
-    private AutoCloseable closeable;
-
     @Mock
     private SubscriptionSession session;
 
@@ -57,18 +56,12 @@ class IoTDBTopicManagerTest {
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
         when(sessionFactory.get()).thenReturn(session);
         topicManager = new IoTDBTopicManager.Default(sessionFactory);
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
-    }
-
     @Test
-    void topic_creation_should_succeed() throws IoTDBConnectionException, StatementExecutionException {
+    void topicCreation_shouldSucceed() throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
         String path = "root.test_device.test_variable";
         topicManager.createTopicIfNotExists(topicName, path);
@@ -88,7 +81,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void session_connection_exceptions_should_make_topic_creation_fail()
+    void topicCreationShouldFails_onSessionConnectionExceptions()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
         String path = "root.test_device.test_variable";
@@ -105,7 +98,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void statement_exceptions_should_make_topic_creation_fail()
+    void topicCreationShouldFail_onStatementExceptions()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
         String path = "root.test_device.test_variable";
@@ -124,7 +117,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void loss_of_session_connection_should_make_topic_creation_fail()
+    void topicCreationShouldFail_onLossOfSessionConnection()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
         String path = "root.test_device.test_variable";
@@ -143,7 +136,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void drop_topic_should_succeed() throws IoTDBConnectionException, StatementExecutionException {
+    void topicDrop_shouldSucceed() throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
         topicManager.dropTopicIfExists(topicName);
@@ -154,7 +147,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void session_connection_exception_should_make_topic_drop_fail()
+    void topicDropShouldFail_onSessionConnectionException()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
@@ -170,7 +163,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void statement_exceptions_should_make_topic_drop_fail()
+    void topicDropShouldFail_onStatementException()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
@@ -188,7 +181,7 @@ class IoTDBTopicManagerTest {
     }
 
     @Test
-    void loss_of_session_connection_should_make_topic_drop_fail()
+    void topicDropShouldFail_onLossOfSessionConnection()
             throws IoTDBConnectionException, StatementExecutionException {
         String topicName = "test_topic";
 
