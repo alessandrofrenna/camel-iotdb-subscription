@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 public interface IoTDBTopicConsumerManager extends AutoCloseable {
     SubscriptionPushConsumer createPushConsumer(
-            IoTDBTopicConsumerConfiguration consumerCfg, ConsumeListener consumeListener);
+            IoTDBTopicConsumerConfiguration consumerCfg, TopicAwareConsumeListener consumeListener);
 
     void destroyPushConsumer(PushConsumerKey pushConsumerKey);
 
@@ -49,31 +49,37 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumerManager.class);
         private final IoTDBSessionConfiguration sessionConfiguration;
         private final Map<PushConsumerKey, SubscriptionPushConsumer> consumerRegistry = new ConcurrentHashMap<>();
+        private final Map<PushConsumerKey, RoutedConsumeListener> routedConsumeListenerRegistry = new ConcurrentHashMap<>();
 
         public Default(IoTDBSessionConfiguration sessionConfiguration) {
             this.sessionConfiguration = sessionConfiguration;
         }
 
         @Override
-        public SubscriptionPushConsumer createPushConsumer(
-                IoTDBTopicConsumerConfiguration consumerCfg, ConsumeListener consumeListener) {
+        public SubscriptionPushConsumer createPushConsumer(IoTDBTopicConsumerConfiguration consumerCfg, TopicAwareConsumeListener topicAwareConsumeListener) {
+            final String topicName = topicAwareConsumeListener.topicName();
+            final ConsumeListener topicConsumeListener = topicAwareConsumeListener.consumeListener();
+
             PushConsumerKey pushConsumerKey;
-            if (consumerCfg.getGroupId().isPresent()
-                    && consumerCfg.getConsumerId().isPresent()) {
-                pushConsumerKey = new PushConsumerKey(
-                        consumerCfg.getGroupId().get(),
-                        consumerCfg.getConsumerId().get());
+            if (consumerCfg.getGroupId().isPresent() && consumerCfg.getConsumerId().isPresent()) {
+                pushConsumerKey = new PushConsumerKey(consumerCfg.getGroupId().get(), consumerCfg.getConsumerId().get());
                 if (consumerRegistry.containsKey(pushConsumerKey)) {
-                    LOG.debug("Found an existing consumer with key {}", pushConsumerKey);
+                    LOG.debug("Found an existing consumer with key {}. Registering consume listener for topic with name {}", pushConsumerKey, topicName);
+                    routedConsumeListenerRegistry.get(pushConsumerKey).routeConsumeListener(topicName, topicConsumeListener);
                     return consumerRegistry.get(pushConsumerKey);
                 }
             }
 
-            final SubscriptionPushConsumer pushConsumer = createNewPushConsumer(consumerCfg, consumeListener);
+            // register the new consume listener to use for the topic
+            final RoutedConsumeListener routedConsumeListener = new RoutedConsumeListener.Default();
+            routedConsumeListener.routeConsumeListener(topicName, topicConsumeListener);
+            // create the subscriber
+            final SubscriptionPushConsumer pushConsumer = createNewPushConsumer(consumerCfg, routedConsumeListener);
             pushConsumerKey = new PushConsumerKey(pushConsumer.getConsumerGroupId(), pushConsumer.getConsumerId());
             consumerRegistry.put(pushConsumerKey, pushConsumer);
+            routedConsumeListenerRegistry.put(pushConsumerKey, routedConsumeListener);
 
-            LOG.debug("Created and registered new push consumer with key {}", pushConsumerKey);
+            LOG.debug("Created a new push consumer with key {}. Registered consume listener for topic with name {}", pushConsumerKey, topicName);
             return pushConsumer;
         }
 
@@ -88,7 +94,8 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
                 // The key should be removed only when close doesn't throw an exception
                 consumerRegistry.get(pushConsumerKey).close();
                 consumerRegistry.remove(pushConsumerKey);
-                LOG.debug("Consumer with key {} was destroyed", pushConsumerKey);
+                routedConsumeListenerRegistry.remove(pushConsumerKey).clear();
+                LOG.debug("Consumer with key {} was destroyed. Removed routed consume listeners", pushConsumerKey);
             } catch (Exception e) {
                 LOG.error("Error destroying consumer with key {}: {}", pushConsumerKey, e.getMessage());
             }
@@ -97,7 +104,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         @Override
         public void close() {
             new ArrayList<>(consumerRegistry.keySet()).forEach(this::destroyPushConsumer);
-            LOG.debug("Cleared all consumers mapped to topic");
+            LOG.debug("Cleared all mapped consumers and routed consume listeners");
             consumerRegistry.clear();
         }
 

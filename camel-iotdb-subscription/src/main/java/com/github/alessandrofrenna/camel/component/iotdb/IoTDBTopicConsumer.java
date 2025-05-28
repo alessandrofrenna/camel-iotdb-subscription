@@ -48,13 +48,13 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     private final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
 
     private final IoTDBTopicEndpoint endpoint;
-    private final SubscriptionPushConsumer pushConsumer;
+    private final IoTDBTopicConsumerManager consumerManager;
+    private SubscriptionPushConsumer pushConsumer;
 
     IoTDBTopicConsumer(IoTDBTopicEndpoint endpoint, Processor processor, IoTDBTopicConsumerManager consumerManager) {
         super(endpoint, processor);
         this.endpoint = endpoint;
-        this.pushConsumer =
-                consumerManager.createPushConsumer(endpoint.getConsumerCfg(), this.defaultConsumeListener());
+        this.consumerManager = consumerManager;
     }
 
     /**
@@ -83,23 +83,30 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     @Override
     protected void doStart() throws Exception {
         final String topic = endpoint.getTopic();
-        super.doStart();
+        var consumeListener = new TopicAwareConsumeListener(endpoint.getTopic(), this.defaultConsumeListener());
+        pushConsumer = consumerManager.createPushConsumer(endpoint.getConsumerCfg(), consumeListener);
         pushConsumer.open();
         pushConsumer.subscribe(topic);
         publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, getRouteId()));
         LOG.info("IoTDBTopicConsumer consumer started and subscribed to event published for '{}' IOTDB topic", topic);
+
+        super.doStart();
     }
 
     @Override
     protected void doStop() throws Exception {
         final String topic = endpoint.getTopic();
+        if (pushConsumer == null) {
+            super.doStop();
+            return;
+        }
         LOG.debug("Stopping IoTDBTopicConsumer for topic: '{}'", topic);
         try {
             LOG.debug("Unsubscribing IoTDB push consumer for topic: '{}'", endpoint.getTopic());
             pushConsumer.unsubscribe(topic);
             pushConsumer.close();
             LOG.info("Unsubscribed and closed IoTDB push consumer for topic: '{}'", topic);
-        } catch (SubscriptionException e) {
+        } catch (IllegalStateException | SubscriptionException e) {
             LOG.info("Cannot unsubscribe/close from topic '{}': {}", topic, e.getMessage());
         }
         super.doStop();

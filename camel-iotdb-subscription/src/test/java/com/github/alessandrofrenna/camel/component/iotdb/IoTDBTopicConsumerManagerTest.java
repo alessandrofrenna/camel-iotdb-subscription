@@ -35,9 +35,11 @@ import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class IoTDBTopicConsumerManagerTest {
     // A small subclass for testing that returns a mocked consumer
     static class TestableManager extends IoTDBTopicConsumerManager.Default {
@@ -68,8 +70,6 @@ public class IoTDBTopicConsumerManagerTest {
         }
     }
 
-    private AutoCloseable closeable;
-
     @Mock
     private ConsumeListener consumeListener;
 
@@ -77,32 +77,32 @@ public class IoTDBTopicConsumerManagerTest {
 
     private TestableManager consumerManager;
     private Map<PushConsumerKey, SubscriptionPushConsumer> consumerRegistry;
+    private TopicAwareConsumeListener topicAwareConsumeListener;
 
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-
         topicConsumerConfiguration = new IoTDBTopicConsumerConfiguration();
         topicConsumerConfiguration.setGroupId("group_a");
         topicConsumerConfiguration.setConsumerId("consumer_a");
         consumerManager = new TestableManager(new IoTDBSessionConfiguration("h", 1234, "u", "p"));
         consumerRegistry = getField(consumerManager, "consumerRegistry");
+        topicAwareConsumeListener = new TopicAwareConsumeListener("test_topic1", consumeListener);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
+    void tearDown() {
         consumerRegistry.clear();
     }
 
     @Test
-    void creating_multiple_consumers_with_the_same_key_should_produce_the_same_consumer() {
+    void when_multipleConsumersWithTheSameKeyAreCreated_theSameConsumerInstance_shouldBeReturned() {
         final PushConsumerKey consumerKey = new PushConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
 
-        var c1 = consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
-        var c2 = consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+        var topicAwareConsumeListener2 = topicAwareConsumeListener.reuseWithTopic("test_topic2");
+        var c1 = consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
+        var c2 = consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener2);
 
         assertSame(consumerManager.mockConsumer, c1, "First call should return our mock");
         assertSame(consumerManager.mockConsumer, c2, "Second call with same key should return same mock");
@@ -111,13 +111,14 @@ public class IoTDBTopicConsumerManagerTest {
     }
 
     @Test
-    void creating_multiple_consumers_with_different_keys_should_produce_different_consumers() {
+    void when_multipleConsumersWithDifferentKeysAreCreated_differentConsumerInstances_shouldBeReturned() {
         IoTDBTopicConsumerConfiguration secondCfg = new IoTDBTopicConsumerConfiguration();
         secondCfg.setGroupId("group_b");
         secondCfg.setConsumerId("consumer_b");
 
-        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
-        SubscriptionPushConsumer result = consumerManager.createPushConsumer(secondCfg, consumeListener);
+        var topicAwareConsumeListener2 = topicAwareConsumeListener.reuseWithTopic("test_topic2");
+        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
+        SubscriptionPushConsumer result = consumerManager.createPushConsumer(secondCfg, topicAwareConsumeListener2);
 
         final PushConsumerKey firstConsumerKey = new PushConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
@@ -132,11 +133,11 @@ public class IoTDBTopicConsumerManagerTest {
     }
 
     @Test
-    void destroy_push_consumer_should_invoke_close_method_and_remove_from_the_registry() {
+    void when_aConsumerIsDestroyed_theCloseMethodShouldBeInvoked_andTheConsumerShouldBeRemovedFromTheRegistry() {
         final PushConsumerKey consumerKey = new PushConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
-        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
         consumerManager.destroyPushConsumer(consumerKey);
         verify(consumerManager.mockConsumer).close();
         assertFalse(consumerRegistry.containsKey(consumerKey));
@@ -144,18 +145,18 @@ public class IoTDBTopicConsumerManagerTest {
     }
 
     @Test
-    void destroy_push_consumer_with_a_non_existing_consumer_key_should_do_nothing() {
+    void when_theConsumerKeyOfANonExistingConsumerIsUsed_nothingShouldBeDone() {
         PushConsumerKey missingKey = new PushConsumerKey(null, null);
         consumerManager.destroyPushConsumer(missingKey);
         assertTrue(consumerRegistry.isEmpty());
     }
 
     @Test
-    void destroy_push_consumer_when_subscribed_to_multiple_topic_should_throw_exception_and_is_not_removed() {
+    void when_theConsumerToDestroyIsSubscribedToMultipleTopics_anExceptionShouldBeThrown_andItShouldNotBeRemoved() {
         final PushConsumerKey consumerKey = new PushConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
-        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
+        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
 
         doThrow(new IllegalStateException("Close failed"))
                 .when(consumerManager.mockConsumer)
@@ -168,14 +169,14 @@ public class IoTDBTopicConsumerManagerTest {
     }
 
     @Test
-    void clear_all_destroys_all_registered_consumers() {
+    void when_clearAllIsCalled_allRegisteredConsumers_shouldBeDestroyed() {
         // register two different keys
         var secondCfg = new IoTDBTopicConsumerConfiguration();
         secondCfg.setGroupId("group_b");
         secondCfg.setConsumerId("consumer_b");
 
-        consumerManager.createPushConsumer(topicConsumerConfiguration, consumeListener);
-        consumerManager.createPushConsumer(secondCfg, consumeListener);
+        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
+        consumerManager.createPushConsumer(secondCfg, topicAwareConsumeListener);
         consumerManager.close();
 
         verify(consumerManager.mockConsumer, times(2)).close();
