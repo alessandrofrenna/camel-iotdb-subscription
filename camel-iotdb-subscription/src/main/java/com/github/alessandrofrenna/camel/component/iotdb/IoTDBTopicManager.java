@@ -34,37 +34,51 @@ import org.apache.iotdb.session.subscription.SubscriptionSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The <b>IoTDBTopicManager</b> interface define create and drop methods to perform topic's operations.
+ */
 public interface IoTDBTopicManager {
     /**
-     * Crate a topic with a name on a specific IoTDB timeseries path.</br> If the topic already exists the creation will
-     * be skipped.
+     * Crate a topic with a name on a specific IoTDB timeseries path.</br>
+     * If the topic already exists the creation will be skipped.
      *
-     * @param topicName is the name of the topic to create.
-     * @param path is the path on which the topic will be bound.
+     * @param topicName is the name of the topic to create
+     * @param path is the path on which the topic will be bound
      */
     void createTopicIfNotExists(String topicName, String path);
 
     /**
-     * Delete a topic from IoTDB using its name.</br> If the topic doesn't exist it will not be dropped.
+     * Delete a topic from IoTDB using its name.</br>
+     * If the topic doesn't exist it will not be dropped.
      *
-     * @param topicName is the name of the topic to drop.
+     * @param topicName is the name of the topic to drop
      */
     void dropTopicIfExists(String topicName);
 
     /**
-     * The <b>Default</b> class implements {@link IoTDBTopicManager} interface.</br> It is used as delegate to create or
-     * drop topics from IoTDB.
+     * The <b>Default</b> class implements {@link IoTDBTopicManager} interface.</br>
+     * It is used as delegate to handle create or drop operations on IoTDB topics.
      */
     class Default implements IoTDBTopicManager {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicManager.class);
 
         private final Supplier<SubscriptionSession> sessionFactory;
 
+        /**
+         * Create a default {@link IoTDBTopicManager} instance.
+         *
+         * @param sessionFactory to supply an instance of a {@link SubscriptionSession}
+         */
         public Default(Supplier<SubscriptionSession> sessionFactory) {
             this.sessionFactory = sessionFactory;
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         *
+         * @param topicName is the name of the topic to create.
+         * @param path is the path on which the topic will be bound.
+         **/
         @Override
         public void createTopicIfNotExists(String topicName, String path) {
             Properties topicProperties = new Properties();
@@ -88,7 +102,11 @@ public interface IoTDBTopicManager {
             }
         }
 
-        /** {@inheritDoc} */
+        /**
+         * {@inheritDoc}
+         *
+         * @param topicName is the name of the topic to drop
+         * */
         @Override
         public void dropTopicIfExists(String topicName) {
             try (var session = sessionFactory.get()) {

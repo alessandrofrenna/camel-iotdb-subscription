@@ -29,6 +29,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.CamelContextAware;
 import org.apache.camel.Route;
 import org.apache.camel.ServiceStatus;
+import org.apache.camel.spi.CamelEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,30 +38,82 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopic
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
+/**
+ * The <b>IoTDBRoutesRegistry</b> interface extends {@link CamelContextAware}.</br>
+ * The interface defines methods that are used inside {@link IoTDBSubscriptionEventListener#notify(CamelEvent)}
+ * to handle the received events.
+ */
 public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
+
+    /**
+     * Register a route after a {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer} is created.
+     *
+     * @param event of type {@link IoTDBTopicConsumerSubscribed}
+     */
     void registerRouteAfterConsumerSubscription(IoTDBTopicConsumerSubscribed event);
 
+    /**
+     * Stop all routes that consume from a topic.
+     * The routes can be stopped only if their status is {@link ServiceStatus#Started}.
+     *
+     * @param event of type {@link IoTDBStopAllTopicConsumers}
+     */
     void stopAllConsumedTopicRoutes(IoTDBStopAllTopicConsumers event);
 
+    /**
+     * Resume all consumers that were previously stopped.
+     * The routes can be resumed only if their status is {@link ServiceStatus#Stopped}.
+     *
+     * @param event of type {@link IoTDBResumeAllTopicConsumers}
+     */
     void resumeAllStoppedConsumedTopicRoutes(IoTDBResumeAllTopicConsumers event);
 
+    /**
+     * Remove all the routes that were tight to a topic that was dropped.</br>
+     * The routes can be deleted only if their status is {@link ServiceStatus#Stopped}.
+     *
+     * @param event {@link IoTDBTopicDropped}
+     */
     void removeRoutesAfterTopicDrop(IoTDBTopicDropped event);
 
+    /**
+     * Remove the mapped routeId after a {@link CamelEvent.RouteRemovedEvent}.
+     *
+     * @param topicName to remove
+     * @param routeId tighted to the topic name
+     */
     void removeTopicMappedRoutes(String topicName, String routeId);
 
+    /**
+     * {@inheritDoc}
+     */
     void close();
 
+    /**
+     * The <b>Default</b> class implements {@link IoTDBRoutesRegistry} interface.</br>
+     * It is used as delegate to handle registry operations.
+     */
     class Default implements IoTDBRoutesRegistry {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBRoutesRegistry.class);
         private final Map<String, Set<String>> routesIdByTopic = new ConcurrentHashMap<>();
         private final IoTDBTopicConsumerManager consumerManager;
         private CamelContext camelContext;
 
+        /**
+         * Create a {@link IoTDBRoutesRegistry} instance.
+         *
+         * @param consumerManager dependency to manage consumers
+         */
         public Default(IoTDBTopicConsumerManager consumerManager) {
             Objects.requireNonNull(consumerManager, "consumer manager is null");
             this.consumerManager = consumerManager;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param event of type {@link IoTDBTopicConsumerSubscribed}
+         */
         @Override
         public void registerRouteAfterConsumerSubscription(IoTDBTopicConsumerSubscribed event) {
             final String topicName = event.getTopicName();
@@ -75,6 +128,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
                     topicRoutes);
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param event of type {@link IoTDBStopAllTopicConsumers}
+         */
         @Override
         public void stopAllConsumedTopicRoutes(IoTDBStopAllTopicConsumers event) {
             final String topicName = event.getTopicName();
@@ -85,6 +143,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             new ArrayList<>(routesIdByTopic.get(topicName)).forEach(this::stopRoute);
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param event of type {@link IoTDBResumeAllTopicConsumers}
+         */
         @Override
         public void resumeAllStoppedConsumedTopicRoutes(IoTDBResumeAllTopicConsumers event) {
             final String topicName = event.getTopicName();
@@ -95,6 +158,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             new ArrayList<>(routesIdByTopic.get(topicName)).forEach(this::restartRoute);
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param event {@link IoTDBTopicDropped}
+         */
         @Override
         public void removeRoutesAfterTopicDrop(IoTDBTopicDropped event) {
             String topicName = event.getTopicName();
@@ -105,6 +173,12 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             new ArrayList<>(routesIdByTopic.get(topicName)).forEach(this::removeStopped);
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param topicName to remove
+         * @param routeId tighted to the topic name
+         */
         @Override
         public void removeTopicMappedRoutes(String topicName, String routeId) {
             routesIdByTopic.computeIfPresent(topicName, (key, routes) -> {
@@ -120,6 +194,9 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             });
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void close() {
             final var camelContext = getCamelContext();
@@ -135,11 +212,21 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             routesIdByTopic.clear();
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @param camelContext the Camel context
+         */
         @Override
         public void setCamelContext(CamelContext camelContext) {
             this.camelContext = camelContext;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @return the Camel context
+         */
         @Override
         public CamelContext getCamelContext() {
             if (camelContext == null) {
@@ -148,6 +235,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             return camelContext;
         }
 
+        /**
+         * Stop a route when its state is {@link ServiceStatus#Started}.
+         *
+         * @param routeId to stop
+         */
         void stopRoute(String routeId) {
             final CamelContext ctx = getCamelContext();
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
@@ -171,6 +263,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
                     routeStatus);
         }
 
+        /**
+         * Restart/Resume a route when its state is {@link ServiceStatus#Stopped}.
+         *
+         * @param routeId to restart/resume
+         */
         void restartRoute(String routeId) {
             final CamelContext ctx = getCamelContext();
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
@@ -194,6 +291,11 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
                     routeStatus);
         }
 
+        /**
+         * Remove a route when its state is {@link ServiceStatus#Stopped}.
+         *
+         * @param routeId to remove
+         */
         void removeStopped(String routeId) {
             final CamelContext ctx = getCamelContext();
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);

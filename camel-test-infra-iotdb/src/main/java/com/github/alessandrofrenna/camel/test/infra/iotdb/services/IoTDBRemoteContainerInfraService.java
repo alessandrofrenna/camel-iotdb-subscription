@@ -20,13 +20,23 @@ import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBPro
 import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_HOST;
 import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_PORT;
 
+/**
+ * The <b>IoTDBRemoteContainerInfraService</b> implements {@link IoTDBInfraService} and represents an instance of a remote container instance.</br>
+ * It allows to use a remote/local running instance of the iotdb server.
+ */
 public class IoTDBRemoteContainerInfraService implements IoTDBInfraService {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String host() {
         return System.getProperty(IOTDB_HOST);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int port() {
         String port = System.getProperty(IOTDB_PORT);

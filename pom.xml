@@ -21,6 +21,7 @@
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <build-helper-plugin.version>3.6.0</build-helper-plugin.version>
         <spotless-maven-plugin.version>2.44.4</spotless-maven-plugin.version>
     </properties>
@@ -121,6 +122,20 @@
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
+            <!-- javadoc plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- mojo plugin -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -168,7 +183,7 @@
                         <palantirJavaFormat>
                             <version>2.66.0</version>
                             <style>PALANTIR</style>
-                            <formatJavadoc>true</formatJavadoc>
+                            <formatJavadoc>false</formatJavadoc>
                         </palantirJavaFormat>
                         <importOrder>
                             <semanticSort>true</semanticSort>

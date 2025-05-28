@@ -25,10 +25,17 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * The <b>IoTDBContainer</b> class extends {@link GenericContainer class}.</br>
+ * It defines the controller that will be created and launched.
+ */
 public class IoTDBContainer extends GenericContainer<IoTDBContainer> {
 
     public static final String CONTAINER_NAME = "iotdb";
 
+    /**
+     * Default <b>IoTDBContainer</b> constructor.
+     */
     public IoTDBContainer() {
         super(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_CONTAINER));
         int port = Optional.of(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_PORT))
@@ -37,10 +44,20 @@ public class IoTDBContainer extends GenericContainer<IoTDBContainer> {
         this.withNetworkAliases(CONTAINER_NAME).withExposedPorts(port).waitingFor(Wait.forListeningPort());
     }
 
+    /**
+     * Create a <b>IoTDBContainer</b> using its name.
+     * @param imageName of iotdb
+     */
     public IoTDBContainer(String imageName) {
         super(DockerImageName.parse(imageName));
     }
 
+    /**
+     * Initialize a <b>IoTDBContainer</b> using its name and network aliases.
+     * @param imageName of iotdb
+     * @param networkAlias to use with the container
+     * @return an instance of the container object
+     */
     public static IoTDBContainer initContainer(String imageName, String networkAlias) {
         int port = Optional.of(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_PORT))
                 .map(Integer::parseInt)

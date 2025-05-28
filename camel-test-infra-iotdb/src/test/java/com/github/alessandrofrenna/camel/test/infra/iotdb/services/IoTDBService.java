@@ -19,4 +19,12 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 import org.apache.camel.test.infra.common.services.ContainerTestService;
 import org.apache.camel.test.infra.common.services.TestService;
 
+/**
+ * The <b>IoTDBService</b> interface extends {@link IoTDBInfraService}, {@link TestService} and {@link ContainerTestService}.</br>
+ * It is used inside {@link IoTDBServiceFactory#createService()} and is implemented by:
+ * <ul>
+ *     <li>{@link IoTDBServiceFactory.IoTDBRemoteContainerService}</li>
+ *     <li>{@link IoTDBServiceFactory.IoTDBLocalContainerService}</li>
+ * </ul>
+ */
 public interface IoTDBService extends TestService, IoTDBInfraService, ContainerTestService {}

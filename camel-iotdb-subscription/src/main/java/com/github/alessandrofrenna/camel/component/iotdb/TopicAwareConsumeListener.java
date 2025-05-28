@@ -19,7 +19,22 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 
+/**
+ * <b>TopicAwareConsumeListener</b> allow to bind together the topic name and a {@link ConsumeListener}.</br>
+ * It will be used inside {@link IoTDBTopicConsumerManager#createPushConsumer(IoTDBTopicConsumerConfiguration, TopicAwareConsumeListener)}
+ * to register a {@link RoutedConsumeListener} for a new or an existing {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer}.
+ *
+ * @param topicName subject of the subscription
+ * @param consumeListener that will process the messages received by a consumer
+ */
 public record TopicAwareConsumeListener(String topicName, ConsumeListener consumeListener) {
+    /**
+     * Create an instance of {@link TopicAwareConsumeListener} with a different topic name.</br>
+     * It could be useful to share the same {@link ConsumeListener} with multiple topic.
+     *
+     * @param otherTopicName that will use the consume listener
+     * @return a new instance of {@link TopicAwareConsumeListener}
+     */
     TopicAwareConsumeListener reuseWithTopic(String otherTopicName) {
         return new TopicAwareConsumeListener(otherTopicName, consumeListener());
     }

@@ -37,10 +37,12 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
  * {@link SubscriptionPushConsumer} used to get message from an IoTDB topic after subscription.</br> This class
  * implements the {@link EventPublisher} interface because it is able to publish events: </br>
  *
- * <ol>
- *   <li><b>{@link IoTDBTopicConsumerSubscribed}</b>: after {@link IoTDBTopicConsumer#doStart()} invocation, when a new
+ * <ul>
+ *   <li>
+ *       <b>{@link IoTDBTopicConsumerSubscribed}</b>: after {@link IoTDBTopicConsumer#doStart()} invocation, when a new
  *       {@link SubscriptionPushConsumer} is created.
- * </ol>
+ *   </li>
+ * </ul>
  */
 class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     private final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
@@ -49,6 +51,13 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     private final IoTDBTopicConsumerManager consumerManager;
     private SubscriptionPushConsumer pushConsumer;
 
+    /**
+     * Create an <b>IoTDBTopicConsumer</b> instance.
+     *
+     * @param endpoint source that create the consumer
+     * @param processor that will be used by the exchange to process incoming data
+     * @param consumerManager dependency that handle consumer operations
+     */
     IoTDBTopicConsumer(IoTDBTopicEndpoint endpoint, Processor processor, IoTDBTopicConsumerManager consumerManager) {
         super(endpoint, processor);
         this.endpoint = endpoint;
@@ -56,7 +65,7 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     }
 
     /**
-     * Get the id of the route associated to the endpoint
+     * Get the id of the route associated to the endpoint.
      *
      * @return the camel route id
      * @throws RuntimeCamelException if the route is null

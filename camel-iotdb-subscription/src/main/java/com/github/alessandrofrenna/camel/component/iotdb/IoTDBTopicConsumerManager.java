@@ -28,15 +28,46 @@ import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The <b>IoTDBTopicConsumerManager</b> interface defines the methods to handle consumer operations.
+ */
 public interface IoTDBTopicConsumerManager extends AutoCloseable {
+    /**
+     * Create a {@link SubscriptionPushConsumer} instance.
+     *
+     * @param consumerCfg of the consumer
+     * @param topicAwareConsumeListener wraps the listener that will be used to handle incoming message
+     * @return a push consumer
+     */
     SubscriptionPushConsumer createPushConsumer(
-            IoTDBTopicConsumerConfiguration consumerCfg, TopicAwareConsumeListener consumeListener);
+            IoTDBTopicConsumerConfiguration consumerCfg, TopicAwareConsumeListener topicAwareConsumeListener);
 
+    /**
+     * Destroy a {@link SubscriptionPushConsumer} instance by its id.
+     *
+     * @param pushConsumerKey that identifies a consumer
+     */
     void destroyPushConsumer(PushConsumerKey pushConsumerKey);
 
+    /**
+     * Close the {@link IoTDBTopicConsumerManager} instance.</br>
+     *
+     * {@inheritDoc}
+     */
     void close();
 
+    /**
+     * The <b>PushConsumerKey</b> record defines a {@link SubscriptionPushConsumer} id.
+     *
+     * @param groupId of which the consumer is member
+     * @param consumerId is the id of the consumer
+     */
     record PushConsumerKey(String groupId, String consumerId) {
+        /**
+         * Get a string version of the {@link PushConsumerKey} instance.
+         *
+         * @return a string version of the key
+         */
         @Override
         public String toString() {
             return String.format(
@@ -45,6 +76,10 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         }
     }
 
+    /**
+     * The <b>Default</b> class implements {@link IoTDBTopicConsumerManager} interface.</br>
+     * It is used as delegate to handle operations on {@link SubscriptionPushConsumer}.
+     */
     class Default implements IoTDBTopicConsumerManager {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumerManager.class);
         private final IoTDBSessionConfiguration sessionConfiguration;
@@ -52,10 +87,27 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         private final Map<PushConsumerKey, RoutedConsumeListener> routedConsumeListenerRegistry =
                 new ConcurrentHashMap<>();
 
+        /**
+         * Create an {@link IoTDBTopicConsumerManager} instance.
+         *
+         * @param sessionConfiguration needed to create the consumer
+         */
         public Default(IoTDBSessionConfiguration sessionConfiguration) {
             this.sessionConfiguration = sessionConfiguration;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * This implementation will cache the created {@link SubscriptionPushConsumer} inside an in memory cache.</br>
+         * An instance of {@link RoutedConsumeListener} will be also cached.
+         * The {@link TopicAwareConsumeListener} will be used register a new {@link ConsumeListener} inside the cached
+         * {@link RoutedConsumeListener}.
+         *
+         * @param consumerCfg of the consumer
+         * @param topicAwareConsumeListener wraps the listener that will be used to handle incoming message
+         * @return a push consumer
+         */
         @Override
         public SubscriptionPushConsumer createPushConsumer(
                 IoTDBTopicConsumerConfiguration consumerCfg, TopicAwareConsumeListener topicAwareConsumeListener) {
@@ -96,6 +148,17 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
             return pushConsumer;
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * This implementation proceeds to remove {@link SubscriptionPushConsumer} after
+         * {@link SubscriptionPushConsumer#close()}.</br>
+         * After that it will remove {@link RoutedConsumeListener} from the cache as well.</br>
+         * When {@link SubscriptionPushConsumer#close()} fails nothing will be done.
+         * The fail could happen when the consumer is subscribed to other topics or for other reasons.
+         *
+         * @param pushConsumerKey that identifies a consumer
+         */
         @Override
         public void destroyPushConsumer(PushConsumerKey pushConsumerKey) {
             if (!consumerRegistry.containsKey(pushConsumerKey)) {
@@ -114,13 +177,24 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         public void close() {
             new ArrayList<>(consumerRegistry.keySet()).forEach(this::destroyPushConsumer);
             LOG.debug("Cleared all mapped consumers and routed consume listeners");
             consumerRegistry.clear();
+            routedConsumeListenerRegistry.clear();
         }
 
+        /**
+         * Handle the creation of a new  {@link SubscriptionPushConsumer}.
+         *
+         * @param consumerCfg of the consumer
+         * @param consumeListener the routed consume listener
+         * @return the new push consumer
+         */
         SubscriptionPushConsumer createNewPushConsumer(
                 IoTDBTopicConsumerConfiguration consumerCfg, ConsumeListener consumeListener) {
             var consumerBuilder = new StatefulSubscriptionPushConsumer.Builder()
@@ -138,14 +212,32 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
             return new StatefulSubscriptionPushConsumer(consumerBuilder);
         }
 
+        /**
+         * The <b>StatefulSubscriptionPushConsumer</b> class extends a {@link SubscriptionPushConsumer}.</br>
+         * This custom version of a {@link SubscriptionPushConsumer} is a decorator that keeps the reference count
+         * of the subscribed topics.
+         */
         private static class StatefulSubscriptionPushConsumer extends SubscriptionPushConsumer {
             private static final Logger LOG = LoggerFactory.getLogger(StatefulSubscriptionPushConsumer.class);
             private final AtomicLong subscribedTopicCount = new AtomicLong(0);
 
+            /**
+             * Create a {@link StatefulSubscriptionPushConsumer} instance.
+             *
+             * @param builder to create the consumer
+             */
             protected StatefulSubscriptionPushConsumer(Builder builder) {
                 super(builder);
             }
 
+            /**
+             * {@inheritDoc}
+             *
+             * Subscribe to a topic by its name. When subscription succeed increase the reference count.
+             *
+             * @param topicName to subscribe to
+             * @throws SubscriptionException when subscription fails
+             */
             @Override
             public void subscribe(String topicName) throws SubscriptionException {
                 super.subscribe(topicName);
@@ -153,6 +245,14 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
                 LOG_COUNT(count);
             }
 
+            /**
+             * {@inheritDoc}
+             *
+             * Unsubscribe from a topic by its name. When un-subscription succeed decrement the reference count.
+             * If the reference count become negative, restore its value to 0.
+             *
+             * @param topicName to unsubscribe from
+             */
             @Override
             public void unsubscribe(String topicName) {
                 try {
@@ -174,6 +274,12 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
                 }
             }
 
+            /**
+             * {@inheritDoc}
+             *
+             * Close a {@link SubscriptionPushConsumer} only if its reference count is 0.</br>
+             * When the reference count is > 0 this method will throw an {@link IllegalArgumentException}.
+             */
             @Override
             public synchronized void close() {
                 final var consumerKey = new PushConsumerKey(getConsumerGroupId(), getConsumerId());

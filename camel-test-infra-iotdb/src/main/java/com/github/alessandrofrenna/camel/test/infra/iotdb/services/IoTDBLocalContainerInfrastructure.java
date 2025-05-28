@@ -26,6 +26,11 @@ import org.apache.camel.test.infra.common.services.ContainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The <b>IoTDBLocalContainerInfrastructure</b> is the default implementation of {@link IoTDBInfraService}.</br>
+ * This class also implements the {@link ContainerService} interface.</br>
+ * It is the infrastructure that will be used by camel to create the container for testing
+ */
 @InfraService(
         service = IoTDBInfraService.class,
         description = "IoTDB is a database used to efficiently store data from iot devices",
@@ -36,14 +41,24 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
 
     private final IoTDBContainer container;
 
+    /**
+     * Default <b>IoTDBLocalContainerInfrastructure</b> constructor.
+     */
     public IoTDBLocalContainerInfrastructure() {
         container = new IoTDBContainer();
     }
 
+    /**
+     * Create an <b>IoTDBLocalContainerInfrastructure</b> instance using the image name of the constructor.
+     * @param imageName of the container.
+     */
     public IoTDBLocalContainerInfrastructure(String imageName) {
         container = IoTDBContainer.initContainer(imageName, IoTDBContainer.CONTAINER_NAME);
     }
 
+    /**
+     * Register properties that will be used by the contained in the system.
+     */
     @Override
     public void registerProperties() {
         System.setProperty(IOTDB_SERVICE_ADDRESS, getServiceAddress());
@@ -51,6 +66,9 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
         System.setProperty(IOTDB_PORT, String.valueOf(port()));
     }
 
+    /**
+     * Initialize the container instance.
+     */
     @Override
     public void initialize() {
         LOG.info("Trying to start IoTDB container");
@@ -59,22 +77,35 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
         LOG.info("IoTDB instance running at {}", getServiceAddress());
     }
 
+    /**
+     * Shutdown the container instance.
+     */
     @Override
     public void shutdown() {
         LOG.info("Stopping IoTDB container");
         container.stop();
     }
 
+    /**
+     * Get the running container instance.
+     * @return the container instance
+     */
     @Override
     public IoTDBContainer getContainer() {
         return container;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String host() {
         return container.getHost();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int port() {
         return container.getMappedPort(DEFAULT_PORT);

@@ -28,14 +28,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The <b>EventPublisher</b> interface extending {@link EndpointAware} interface, allows producers and consumers to
- * publish events
+ * publish events.
  */
 @FunctionalInterface
 public interface EventPublisher extends EndpointAware {
     Logger LOG = LoggerFactory.getLogger(EventPublisher.class);
 
     /**
-     * Notify events to {@link CamelContext}
+     * Notify events to {@link CamelContext}.
      *
      * @param event to notify
      */

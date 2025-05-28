@@ -19,7 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb.event;
 
 /**
  * The <b>IoTDBResumeAllTopicConsumers</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.</br> The
- * event is published by an IotDBTopicProducer when processed and action=drop, and the drop fails
+ * event is published by an IotDBTopicProducer when processed and action=drop, and the drop fails.
  */
 public class IoTDBResumeAllTopicConsumers extends AbstractIoTDBComponentEvent {
     public IoTDBResumeAllTopicConsumers(Object source, String topicName) {

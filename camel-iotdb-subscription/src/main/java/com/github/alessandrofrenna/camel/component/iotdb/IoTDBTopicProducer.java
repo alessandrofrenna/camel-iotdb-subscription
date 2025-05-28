@@ -33,16 +33,22 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopic
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
 /**
- * The <b>IoTDBTopicProducer</b> extends the camel {@link DefaultProducer}. </br> It is used to create and/or drop topic
- * using a {@link IoTDBTopicManager}. </br> On topic drop it fires an {@link IoTDBTopicDropped} event.</br> This class
+ * The <b>IoTDBTopicProducer</b> extends the camel {@link DefaultProducer}.</br>It is used to create and/or drop topic
+ * using a {@link IoTDBTopicManager}.</br> On topic drop it fires an {@link IoTDBTopicDropped} event.</br>This class
  * implements the {@link EventPublisher} interface because it is able to publish events: </br>
  *
- * <ol>
- *   <li><b>{@link IoTDBStopAllTopicConsumers}</b>: after {@link IoTDBTopicProducer#process(Exchange)} invocation and
- *       action is "drop";
- *   <li><b>{@link IoTDBTopicDropped}</b>: after {@link IoTDBTopicProducer#process(Exchange)} invocation and action is
- *       "drop". Drop operation must be successful;
- * </ol>
+ * <ul>
+ *   <li>
+ *       <b>{@link IoTDBStopAllTopicConsumers}</b>: after {@link IoTDBTopicProducer#dropTopic()} invocation;
+ *   </li>
+ *   <li>
+ *       <b>{@link IoTDBTopicDropped}</b>: after {@link IoTDBStopAllTopicConsumers} publication when the drop operation succeeded;
+ *   </li>
+ *   <li>
+ *       <b>{@link IoTDBResumeAllTopicConsumers}</b>: when the drop operation failed. It is used to resume all the consumers
+ *       stopped by the publication of the {@link IoTDBStopAllTopicConsumers} event.
+ *   </li>
+ * </ul>
  */
 class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
     private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicProducer.class);
@@ -50,6 +56,12 @@ class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
     private final IoTDBTopicManager topicManager;
     private final ScheduledExecutorService scheduler;
 
+    /**
+     * Create an instance of <b>IoTDBTopicProducer</b>.
+     *
+     * @param endpoint source that created the producer
+     * @param topicManager dependency that handle topic creation/drop operations
+     */
     IoTDBTopicProducer(IoTDBTopicEndpoint endpoint, IoTDBTopicManager topicManager) {
         super(endpoint);
         this.endpoint = endpoint;
@@ -62,9 +74,8 @@ class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
     }
 
     /**
-     * Dispatch the operation received in {@link IoTDBTopicProducerConfiguration#getAction()}.</br> If action="create"
-     * an IoTDB topic will be created it doesn't exist. If action="drop" an IoTDB topic will be dropped if it does
-     * exist.
+     * Dispatch the operation received in {@link IoTDBTopicProducerConfiguration#getAction()}.</br>If action="create" an IoTDB topic
+     * will be created it doesn't exist. If action="drop" an IoTDB topic will be dropped if it does exist.
      *
      * @param exchange the message exchange
      */

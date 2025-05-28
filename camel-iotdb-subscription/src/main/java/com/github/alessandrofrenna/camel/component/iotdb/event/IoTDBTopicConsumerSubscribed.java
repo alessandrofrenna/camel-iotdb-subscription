@@ -14,24 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.github.alessandrofrenna.camel.component.iotdb.event;
 
 import java.util.Objects;
 
 /**
  * The <b>IoTDBTopicConsumerSubscribed</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.</br> The
- * event is published by an IoTDBTopicConsumer on start.
+ * event is published by an IoTDBTopicConsume on start.
  */
 public class IoTDBTopicConsumerSubscribed extends AbstractIoTDBComponentEvent {
     private final String routeId;
 
+    /**
+     * Create a <b>IoTDBTopicConsumerSubscribed</b> instance.
+     *
+     * @param source of the event
+     * @param topicName subject of the event
+     * @param routeId assigned to the consumer that published the event
+     */
     public IoTDBTopicConsumerSubscribed(Object source, String topicName, String routeId) {
         super(source, topicName);
         Objects.requireNonNull(routeId, "routeId is null");
         this.routeId = routeId;
     }
 
+    /**
+     * Return the routeId assigned to the IoTDBTopicConsumer that published the event.
+     *
+     * @return the route id
+     */
     public String getRouteId() {
         return routeId;
     }

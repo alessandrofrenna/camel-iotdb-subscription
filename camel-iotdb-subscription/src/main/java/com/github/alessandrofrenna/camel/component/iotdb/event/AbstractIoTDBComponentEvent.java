@@ -24,7 +24,7 @@ import org.apache.camel.spi.CamelEvent;
 
 /**
  * The <b>AbstractIoTDBComponentEvent</b> is a {@link CamelEvent} that extends an {@link EventObject}.</br> This
- * abstract class is shared among all concrete events
+ * abstract class is shared among all concrete events.
  */
 public class AbstractIoTDBComponentEvent extends EventObject implements CamelEvent {
     private final String topicName;
@@ -36,21 +36,42 @@ public class AbstractIoTDBComponentEvent extends EventObject implements CamelEve
         this.topicName = topicName;
     }
 
+    /**
+     * Get the event type.
+     *
+     * @return the event type
+     */
     @Override
     public Type getType() {
         return Type.Custom;
     }
 
+    /**
+     * Return the timestamp of when the event was generated.
+     *
+     * @return the timestamp of the event
+     */
     @Override
     public long getTimestamp() {
         return timestamp;
     }
 
+
+    /**
+     * Set the timestamp when the event is created.
+     *
+     * @param timestamp of the event
+     */
     @Override
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
+    /**
+     * Return the string representation of the event.
+     *
+     * @return the event as string
+     */
     @Override
     public String toString() {
         return String.format(
@@ -58,6 +79,11 @@ public class AbstractIoTDBComponentEvent extends EventObject implements CamelEve
                 getClass().getSimpleName(), topicName, getTimestamp(), getSource());
     }
 
+    /**
+     * Return the topic name, subject of the event.
+     *
+     * @return the topic name
+     */
     public String getTopicName() {
         return topicName;
     }

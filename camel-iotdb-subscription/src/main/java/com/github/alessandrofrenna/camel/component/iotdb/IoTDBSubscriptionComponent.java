@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is the <b>IoTDBSubscriptionComponent</b> extends the HealthCheckComponent. The component allows the integration
+ * This is the <b>IoTDBSubscriptionComponent</b> extends the HealthCheckComponent.</br>The component allows the integration
  * between IoTDB data subscription API and apache camel
  */
 @Component("iotdb-subscription")
@@ -75,7 +75,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     public IoTDBSubscriptionComponent() {}
 
     /**
-     * Get the IoTDB host name
+     * Get the IoTDB host name.
      *
      * @return host
      */
@@ -84,7 +84,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Set the IoTDB host name
+     * Set the IoTDB host name.
      *
      * @param host name
      */
@@ -93,7 +93,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Get the IoTDB server port
+     * Get the IoTDB server port.
      *
      * @return the server port
      */
@@ -102,7 +102,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Set the IoTDB server port
+     * Set the IoTDB server port.
      *
      * @param port number
      */
@@ -111,7 +111,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Get the IoTDB user name
+     * Get the IoTDB user name.
      *
      * @return the username
      */
@@ -120,7 +120,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Set the IoTDB user name
+     * Set the IoTDB user name.
      *
      * @param user name
      */
@@ -129,7 +129,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * Get the IoTDB user password
+     * Get the IoTDB user password.
      *
      * @return the password associated with the value returned by {@link #getUser()}
      */
@@ -138,7 +138,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     /**
-     * The IoTDB user password
+     * The IoTDB user password.
      *
      * @param password associated with the value returned by {@link #getUser()}
      */
@@ -149,7 +149,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     /**
      * Get the topic manager that handles topic creation and drop.
      *
-     * @return the topic manager instance.
+     * @return the topic manager instance
      */
     public IoTDBTopicManager getTopicManager() {
         return topicManager;
@@ -158,7 +158,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     /**
      * Get the consumer manager that handles consumers.
      *
-     * @return the consumer manager instance.
+     * @return the consumer manager instance
      */
     public IoTDBTopicConsumerManager getConsumerManager() {
         return consumerManager;
@@ -167,7 +167,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     /**
      * Get the routes registry that handles the routes registered by the component for each topic.
      *
-     * @return the routes registry instance.
+     * @return the routes registry instance
      */
     public IoTDBRoutesRegistry getRoutesRegistry() {
         return routesRegistry;

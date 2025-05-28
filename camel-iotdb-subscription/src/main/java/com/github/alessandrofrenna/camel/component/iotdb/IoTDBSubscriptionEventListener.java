@@ -49,13 +49,13 @@ class IoTDBSubscriptionEventListener extends EventNotifierSupport {
      * Handle events coming from {@link IoTDBTopicProducer} and {@link IoTDBTopicConsumer} instances. The supported
      * events are:
      *
-     * <ol>
-     *   <li>{@link IoTDBTopicConsumerSubscribed}
-     *   <li>{@link IoTDBStopAllTopicConsumers}
-     *   <li>{@link IoTDBTopicDropped}
-     *   <li>{@link IoTDBResumeAllTopicConsumers}
-     *   <li>{@link CamelEvent.RouteRemovedEvent}
-     * </ol>
+     * <ul>
+     *   <li>{@link IoTDBTopicConsumerSubscribed}</li>
+     *   <li>{@link IoTDBStopAllTopicConsumers}</li>
+     *   <li>{@link IoTDBTopicDropped}</li>
+     *   <li>{@link IoTDBResumeAllTopicConsumers}</li>
+     *   <li>{@link CamelEvent.RouteRemovedEvent}</li>
+     * </ul>
      *
      * @param event to handle
      */
@@ -79,6 +79,12 @@ class IoTDBSubscriptionEventListener extends EventNotifierSupport {
         }
     }
 
+    /**
+     * Check if the listener is enabled for a specific event type.
+     *
+     * @param event the received event
+     * @return true if the event instance match the predicate
+     */
     @Override
     public boolean isEnabled(CamelEvent event) {
         return event instanceof IoTDBTopicConsumerSubscribed
