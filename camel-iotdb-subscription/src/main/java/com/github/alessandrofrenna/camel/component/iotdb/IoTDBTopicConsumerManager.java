@@ -154,14 +154,23 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
             }
 
             @Override
-            public void unsubscribe(String topicName) throws SubscriptionException {
-                super.unsubscribe(topicName);
-                long count = subscribedTopicCount.decrementAndGet();
-                if (count < 0) {
-                    subscribedTopicCount.set(0);
-                    LOG_COUNT(0);
-                } else {
-                    LOG_COUNT(count);
+            public void unsubscribe(String topicName) {
+                try {
+                    super.unsubscribe(topicName);
+                    long count = subscribedTopicCount.decrementAndGet();
+                    if (count < 0) {
+                        subscribedTopicCount.set(0);
+                        LOG_COUNT(0);
+                    } else {
+                        LOG_COUNT(count);
+                    }
+                    LOG.info("Consumer with key {} unsubscribed from topic '{}'", consumerId, topicName);
+                } catch (SubscriptionException e) {
+                    LOG.error(
+                            "Unsubscribe operation for consumer with key {} from topic '{}', failed: {}",
+                            consumerId,
+                            topicName,
+                            e.getMessage());
                 }
             }
 
@@ -171,7 +180,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
                 final var count = subscribedTopicCount.longValue();
                 if (count == 0) {
                     super.close();
-                    LOG.debug("Consumer with key {} closed", consumerKey);
+                    LOG.info("Consumer with key {} closed", consumerKey);
                 } else {
                     final String msg = String.format(
                             "Consumer with key %s is subscribed to %s and will not be closed", consumerKey, count);
