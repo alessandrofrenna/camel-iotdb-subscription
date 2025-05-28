@@ -30,6 +30,5 @@ jobs:
           architecture: ${{ matrix.architecture }}
           cache: 'maven'
       - name: Install
-        run: mvn -B clean install -DskipTests --file pom.xml
-      - name: Test
-        run: mvn test
+        run:
+          - mvn -B clean verify --file pom.xml

@@ -15,4 +15,4 @@ updates:
     target-branch: "main"
     schedule:
       interval: "daily"
-      time: "00:00x"
+      time: "00:00"
