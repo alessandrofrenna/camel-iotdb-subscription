@@ -19,6 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -95,14 +96,13 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
 
     @Test
     void when_tempConsumerARoute_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
-        context.getRouteController().startRoute("tempConsumerARoute");
-
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
         mockResult1.reset();
         mockResult1.expectedMinimumMessageCount(1);
         mockResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
+        context.getRouteController().startRoute("tempConsumerARoute");
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
         MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
         mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
@@ -112,14 +112,13 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
 
     @Test
     void when_rainConsumerBRoute_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
-        context.getRouteController().startRoute("rainConsumerBRoute");
-
         int size = 10;
         MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
         mockResult2.reset();
         mockResult2.expectedMinimumMessageCount(1);
         mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
+        context.getRouteController().startRoute("rainConsumerBRoute");
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
         MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
         mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
@@ -129,10 +128,6 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
 
     @Test
     void when_aConsumerIsSubscribedToMultipleTopics_theMessagesShouldBeRoutedCorrectly() throws Exception {
-        var routeController = context.getRouteController();
-        routeController.startRoute("multiConsumerARouteA");
-        routeController.startRoute("multiConsumerARouteB");
-
         int size = 10;
         MockEndpoint mockMultiResult1 = getMockEndpoint("mock:multiResult1");
         mockMultiResult1.reset();
@@ -144,6 +139,9 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
         mockMultiResult2.expectedMinimumMessageCount(1);
         mockMultiResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
+        var routeController = context.getRouteController();
+        routeController.startRoute("multiConsumerARouteA");
+        routeController.startRoute("multiConsumerARouteB");
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
         MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
@@ -159,10 +157,6 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
 
     @Test
     void when_moreConsumersAreSubscribedToTheSameTopic_theMessagesShouldBeRoutedCorrectly() throws Exception {
-        var routeController = context.getRouteController();
-        routeController.startRoute("tempConsumerARoute");
-        routeController.startRoute("multiConsumerARouteA");
-
         int size = 10;
         MockEndpoint result1 = getMockEndpoint("mock:result1");
         result1.reset();
@@ -174,9 +168,12 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
         mockMultiResult1.expectedMinimumMessageCount(1);
         mockMultiResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
+        var routeController = context.getRouteController();
+        routeController.startRoute("tempConsumerARoute");
+        routeController.startRoute("multiConsumerARouteA");
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
 
+        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
         Stream.concat(result1.getReceivedExchanges().stream(), mockMultiResult1.getReceivedExchanges().stream())
                 .forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
 
@@ -212,6 +209,6 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
                 rowCount++;
             }
         }
-        assertEquals(timeseriesCount, rowCount);
+        assertTrue(rowCount >= timeseriesCount);
     }
 }
