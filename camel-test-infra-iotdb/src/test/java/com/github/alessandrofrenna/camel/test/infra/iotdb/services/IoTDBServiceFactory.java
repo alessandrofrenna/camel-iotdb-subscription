@@ -19,7 +19,7 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 import org.apache.camel.test.infra.common.services.SimpleTestServiceBuilder;
 
 /**
- * The <b>IoTDBServiceFactory</b> will create, or utilize a running instance, of an iotdb server container.</br>
+ * The <b>IoTDBServiceFactory</b> will create, or utilize a running instance, of an iotdb server container.<br>
  * Its purpose is to be utilized inside a camel component integration tests.
  */
 public class IoTDBServiceFactory {
@@ -38,7 +38,7 @@ public class IoTDBServiceFactory {
     }
 
     /**
-     * Crete an instance of {@link IoTDBService}.</br>
+     * Crete an instance of {@link IoTDBService}.<br>
      * @return a local or a remote service
      */
     public static IoTDBService createService() {

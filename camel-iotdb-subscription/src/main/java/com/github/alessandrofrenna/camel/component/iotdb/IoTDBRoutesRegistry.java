@@ -39,7 +39,7 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
 /**
- * The <b>IoTDBRoutesRegistry</b> interface extends {@link CamelContextAware}.</br>
+ * The <b>IoTDBRoutesRegistry</b> interface extends {@link CamelContextAware}.<br>
  * The interface defines methods that are used inside {@link IoTDBSubscriptionEventListener#notify(CamelEvent)}
  * to handle the received events.
  */
@@ -69,7 +69,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
     void resumeAllStoppedConsumedTopicRoutes(IoTDBResumeAllTopicConsumers event);
 
     /**
-     * Remove all the routes that were tight to a topic that was dropped.</br>
+     * Remove all the routes that were tight to a topic that was dropped.<br>
      * The routes can be deleted only if their status is {@link ServiceStatus#Stopped}.
      *
      * @param event {@link IoTDBTopicDropped}
@@ -90,7 +90,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
     void close();
 
     /**
-     * The <b>Default</b> class implements {@link IoTDBRoutesRegistry} interface.</br>
+     * The <b>Default</b> class implements {@link IoTDBRoutesRegistry} interface.<br>
      * It is used as delegate to handle registry operations.
      */
     class Default implements IoTDBRoutesRegistry {
@@ -245,7 +245,8 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
             // Let's make our intent clear! Only started and yet stoppable routes could be stopped.
             // Already stopping or stopped routes don't require further processing
-            if (routeStatus != null && routeStatus.isStarted()
+            if (routeStatus != null
+                    && routeStatus.isStarted()
                     && routeStatus.isStoppable()
                     && !routeStatus.isStopping()
                     && !routeStatus.isStopped()) {
@@ -273,7 +274,8 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             final ServiceStatus routeStatus = ctx.getRouteController().getRouteStatus(routeId);
             // Let's make our intent clear! Only stopped and yet startable routes could be restarted.
             // Already starting or started routes don't require further processing
-            if (routeStatus != null && routeStatus.isStopped()
+            if (routeStatus != null
+                    && routeStatus.isStopped()
                     && routeStatus.isStartable()
                     && !routeStatus.isStarting()
                     && !routeStatus.isStarted()) {
@@ -305,10 +307,13 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
                     PushConsumerKey consumerKey = null;
                     final Route route = ctx.getRoute(routeId);
                     if (route == null) {
-                        LOG.warn("Route '{}' was not found in CamelContext during removal attempt. It might have been removed concurrently", routeId);
+                        LOG.warn(
+                                "Route '{}' was not found in CamelContext during removal attempt. It might have been removed concurrently",
+                                routeId);
                         return;
                     }
-                    if (route.getConsumer() != null && route.getConsumer() instanceof IoTDBTopicConsumer topicConsumer) {
+                    if (route.getConsumer() != null
+                            && route.getConsumer() instanceof IoTDBTopicConsumer topicConsumer) {
                         consumerKey = topicConsumer.getPushConsumerKey();
                     }
                     ctx.removeRoute(routeId);

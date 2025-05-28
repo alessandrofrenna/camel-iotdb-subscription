@@ -47,8 +47,8 @@ public class IoTDBTopicProducerConfiguration {
     public IoTDBTopicProducerConfiguration() {}
 
     /**
-     * Get the action passed as route uri parameter.</br> The value of action is required. It must be one of "create" or
-     * "delete".</br> The "create" action will be used to create a topic at a given by {@link #getPath()}.</br> The
+     * Get the action passed as route uri parameter.<br> The value of action is required. It must be one of "create" or
+     * "delete".<br> The "create" action will be used to create a topic at a given by {@link #getPath()}.<br> The
      * "delete" action will delete the topic.
      *
      * @return the action to apply to the topic
@@ -67,7 +67,7 @@ public class IoTDBTopicProducerConfiguration {
     }
 
     /**
-     * Get the timeseries path passed as route uri parameter.</br> The value of the path is required only for the
+     * Get the timeseries path passed as route uri parameter.<br> The value of the path is required only for the
      * "create" action. When action is "delete" this parameter, if passed is ignored.
      *
      * @return an optional wrapping the timeseries path

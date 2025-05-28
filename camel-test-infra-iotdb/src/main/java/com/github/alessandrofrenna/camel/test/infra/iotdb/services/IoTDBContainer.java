@@ -26,7 +26,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * The <b>IoTDBContainer</b> class extends {@link GenericContainer class}.</br>
+ * The <b>IoTDBContainer</b> class extends {@link GenericContainer class}.<br>
  * It defines the controller that will be created and launched.
  */
 public class IoTDBContainer extends GenericContainer<IoTDBContainer> {

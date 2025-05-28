@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is the <b>IoTDBSubscriptionComponent</b> extends the HealthCheckComponent.</br>The component allows the integration
+ * This is the <b>IoTDBSubscriptionComponent</b> extends the HealthCheckComponent.<br>The component allows the integration
  * between IoTDB data subscription API and apache camel
  */
 @Component("iotdb-subscription")

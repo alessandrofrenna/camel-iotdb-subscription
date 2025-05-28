@@ -29,7 +29,7 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
 /**
- * The <b>IoTDBSubscriptionEventListener</b> extends {@link EventNotifierSupport}.</br> It handles events coming from
+ * The <b>IoTDBSubscriptionEventListener</b> extends {@link EventNotifierSupport}.<br> It handles events coming from
  * {@link IoTDBTopicProducer} and {@link IoTDBTopicConsumer} instances.
  */
 class IoTDBSubscriptionEventListener extends EventNotifierSupport {

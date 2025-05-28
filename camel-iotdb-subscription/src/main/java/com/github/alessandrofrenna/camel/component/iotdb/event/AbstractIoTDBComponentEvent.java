@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.apache.camel.spi.CamelEvent;
 
 /**
- * The <b>AbstractIoTDBComponentEvent</b> is a {@link CamelEvent} that extends an {@link EventObject}.</br> This
+ * The <b>AbstractIoTDBComponentEvent</b> is a {@link CamelEvent} that extends an {@link EventObject}.<br> This
  * abstract class is shared among all concrete events.
  */
 public class AbstractIoTDBComponentEvent extends EventObject implements CamelEvent {
@@ -55,7 +55,6 @@ public class AbstractIoTDBComponentEvent extends EventObject implements CamelEve
     public long getTimestamp() {
         return timestamp;
     }
-
 
     /**
      * Set the timestamp when the event is created.

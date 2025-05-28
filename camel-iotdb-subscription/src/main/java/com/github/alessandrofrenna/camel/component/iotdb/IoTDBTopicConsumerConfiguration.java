@@ -56,7 +56,7 @@ public class IoTDBTopicConsumerConfiguration {
     IoTDBTopicConsumerConfiguration() {}
 
     /**
-     * Get the consumer group id passed as route uri parameter.</br> The value of consumer group id is optional. If not
+     * Get the consumer group id passed as route uri parameter.<br> The value of consumer group id is optional. If not
      * defined it will be randomly assigned.
      *
      * @return an optional wrapping the consumer group id
@@ -75,7 +75,7 @@ public class IoTDBTopicConsumerConfiguration {
     }
 
     /**
-     * Get the consumer id passed as route uri parameter.</br> The value of consumer id is optional. If not defined it
+     * Get the consumer id passed as route uri parameter.<br> The value of consumer id is optional. If not defined it
      * will be randomly assigned.
      *
      * @return an optional wrapping the consumer group id
@@ -94,7 +94,7 @@ public class IoTDBTopicConsumerConfiguration {
     }
 
     /**
-     * Get the heartbeat interval used by the consumer to perform healthcheck.</br> This value is optional. If not
+     * Get the heartbeat interval used by the consumer to perform healthcheck.<br> This value is optional. If not
      * provided this method returns the default value of 30_000ms (30s).
      *
      * @return the heartbeat interval in milliseconds
@@ -116,7 +116,7 @@ public class IoTDBTopicConsumerConfiguration {
     }
 
     /**
-     * Get the synchronization interval used by the consumer to sync against IoTDB.</br> This value is optional. If not
+     * Get the synchronization interval used by the consumer to sync against IoTDB.<br> This value is optional. If not
      * provided this method returns the default value of 120_000ms (120s).
      *
      * @return the synchronization interval in milliseconds

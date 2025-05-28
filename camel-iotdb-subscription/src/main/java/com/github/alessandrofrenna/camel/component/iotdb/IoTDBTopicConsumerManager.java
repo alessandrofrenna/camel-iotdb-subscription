@@ -50,7 +50,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
     void destroyPushConsumer(PushConsumerKey pushConsumerKey);
 
     /**
-     * Close the {@link IoTDBTopicConsumerManager} instance.</br>
+     * Close the {@link IoTDBTopicConsumerManager} instance.<br>
      *
      * {@inheritDoc}
      */
@@ -77,7 +77,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
     }
 
     /**
-     * The <b>Default</b> class implements {@link IoTDBTopicConsumerManager} interface.</br>
+     * The <b>Default</b> class implements {@link IoTDBTopicConsumerManager} interface.<br>
      * It is used as delegate to handle operations on {@link SubscriptionPushConsumer}.
      */
     class Default implements IoTDBTopicConsumerManager {
@@ -99,7 +99,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         /**
          * {@inheritDoc}
          *
-         * This implementation will cache the created {@link SubscriptionPushConsumer} inside an in memory cache.</br>
+         * This implementation will cache the created {@link SubscriptionPushConsumer} inside an in memory cache.<br>
          * An instance of {@link RoutedConsumeListener} will be also cached.
          * The {@link TopicAwareConsumeListener} will be used register a new {@link ConsumeListener} inside the cached
          * {@link RoutedConsumeListener}.
@@ -152,8 +152,8 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
          * {@inheritDoc}
          *
          * This implementation proceeds to remove {@link SubscriptionPushConsumer} after
-         * {@link SubscriptionPushConsumer#close()}.</br>
-         * After that it will remove {@link RoutedConsumeListener} from the cache as well.</br>
+         * {@link SubscriptionPushConsumer#close()}.<br>
+         * After that it will remove {@link RoutedConsumeListener} from the cache as well.<br>
          * When {@link SubscriptionPushConsumer#close()} fails nothing will be done.
          * The fail could happen when the consumer is subscribed to other topics or for other reasons.
          *
@@ -213,7 +213,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         }
 
         /**
-         * The <b>StatefulSubscriptionPushConsumer</b> class extends a {@link SubscriptionPushConsumer}.</br>
+         * The <b>StatefulSubscriptionPushConsumer</b> class extends a {@link SubscriptionPushConsumer}.<br>
          * This custom version of a {@link SubscriptionPushConsumer} is a decorator that keeps the reference count
          * of the subscribed topics.
          */
@@ -277,7 +277,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
             /**
              * {@inheritDoc}
              *
-             * Close a {@link SubscriptionPushConsumer} only if its reference count is 0.</br>
+             * Close a {@link SubscriptionPushConsumer} only if its reference count is 0.<br>
              * When the reference count is > 0 this method will throw an {@link IllegalArgumentException}.
              */
             @Override

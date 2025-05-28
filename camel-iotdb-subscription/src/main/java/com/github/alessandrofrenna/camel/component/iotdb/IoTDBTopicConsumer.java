@@ -33,9 +33,9 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.EventPublisher;
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsumerSubscribed;
 
 /**
- * The <b>IoTDBTopicConsumer</b> extends the camel {@link DefaultConsumer}. </br> It is used to create a
- * {@link SubscriptionPushConsumer} used to get message from an IoTDB topic after subscription.</br> This class
- * implements the {@link EventPublisher} interface because it is able to publish events: </br>
+ * The <b>IoTDBTopicConsumer</b> extends the camel {@link DefaultConsumer}. <br> It is used to create a
+ * {@link SubscriptionPushConsumer} used to get message from an IoTDB topic after subscription.<br> This class
+ * implements the {@link EventPublisher} interface because it is able to publish events: <br>
  *
  * <ul>
  *   <li>

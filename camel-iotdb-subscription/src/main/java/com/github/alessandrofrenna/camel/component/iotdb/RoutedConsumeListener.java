@@ -25,9 +25,9 @@ import org.apache.iotdb.session.subscription.consumer.ConsumeResult;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 
 /**
- * The <b>RoutedConsumeListener</b> interface extends the {@link ConsumeListener} interface functionalities.</br>
+ * The <b>RoutedConsumeListener</b> interface extends the {@link ConsumeListener} interface functionalities.<br>
  * Since an instance of {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer} is shared between multiple topic,
- * there is a need for a mechanism that routes the incoming messages to the correct {@link IoTDBTopicConsumer}.</br>
+ * there is a need for a mechanism that routes the incoming messages to the correct {@link IoTDBTopicConsumer}.<br>
  * An instance of this interface is used inside {@link IoTDBTopicConsumerManager#createPushConsumer(IoTDBTopicConsumerConfiguration, TopicAwareConsumeListener)}.
  */
 interface RoutedConsumeListener extends ConsumeListener {
@@ -88,7 +88,7 @@ interface RoutedConsumeListener extends ConsumeListener {
         }
 
         /**
-         * This implementation of onReceive routes the messages to the appropriate {@link ConsumeListener}.</br>
+         * This implementation of onReceive routes the messages to the appropriate {@link ConsumeListener}.<br>
          * It extracts the topic name from the message context obtained calling {@link SubscriptionMessage#getCommitContext()}.
          *
          * @param message incoming message

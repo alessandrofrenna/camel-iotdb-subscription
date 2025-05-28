@@ -19,7 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb.event;
 import java.util.Objects;
 
 /**
- * The <b>IoTDBTopicConsumerSubscribed</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.</br> The
+ * The <b>IoTDBTopicConsumerSubscribed</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.<br> The
  * event is published by an IoTDBTopicConsume on start.
  */
 public class IoTDBTopicConsumerSubscribed extends AbstractIoTDBComponentEvent {

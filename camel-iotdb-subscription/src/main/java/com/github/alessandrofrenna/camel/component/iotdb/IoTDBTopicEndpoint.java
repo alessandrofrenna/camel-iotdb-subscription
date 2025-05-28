@@ -28,7 +28,7 @@ import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultEndpoint;
 
 /**
- * The <b>IoTDBTopicEndpoint</b> extend the camel {@link DefaultEndpoint}.</br>It is used by camel to create producer
+ * The <b>IoTDBTopicEndpoint</b> extend the camel {@link DefaultEndpoint}.<br>It is used by camel to create producer
  * and consumers of routes of the "iotdb-subscription" namespace
  */
 @UriEndpoint(

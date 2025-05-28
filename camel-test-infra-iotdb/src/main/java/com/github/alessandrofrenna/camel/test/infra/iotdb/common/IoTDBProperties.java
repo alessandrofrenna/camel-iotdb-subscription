@@ -21,9 +21,28 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.common;
  */
 public class IoTDBProperties {
 
+    /**
+     * The default IoTDB container property name
+     */
     public static final String IOTDB_CONTAINER = "iotdb.container";
+
+    /**
+     * The default IoTDB service address value property name
+     */
     public static final String IOTDB_SERVICE_ADDRESS = "iotdb.service.address";
+
+    /**
+     * The default IoTDB port property name
+     */
     public static final String IOTDB_PORT = "iotdb.port";
+
+    /**
+     * The default IoTDB host property name
+     */
     public static final String IOTDB_HOST = "iotdb.host";
+
+    /**
+     * The default IoTDB port property name
+     */
     public static final int DEFAULT_PORT = 6667;
 }

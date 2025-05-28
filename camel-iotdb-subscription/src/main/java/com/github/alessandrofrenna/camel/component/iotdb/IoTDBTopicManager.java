@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  */
 public interface IoTDBTopicManager {
     /**
-     * Crate a topic with a name on a specific IoTDB timeseries path.</br>
+     * Crate a topic with a name on a specific IoTDB timeseries path.<br>
      * If the topic already exists the creation will be skipped.
      *
      * @param topicName is the name of the topic to create
@@ -48,7 +48,7 @@ public interface IoTDBTopicManager {
     void createTopicIfNotExists(String topicName, String path);
 
     /**
-     * Delete a topic from IoTDB using its name.</br>
+     * Delete a topic from IoTDB using its name.<br>
      * If the topic doesn't exist it will not be dropped.
      *
      * @param topicName is the name of the topic to drop
@@ -56,7 +56,7 @@ public interface IoTDBTopicManager {
     void dropTopicIfExists(String topicName);
 
     /**
-     * The <b>Default</b> class implements {@link IoTDBTopicManager} interface.</br>
+     * The <b>Default</b> class implements {@link IoTDBTopicManager} interface.<br>
      * It is used as delegate to handle create or drop operations on IoTDB topics.
      */
     class Default implements IoTDBTopicManager {

@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <b>IoTDBLocalContainerInfrastructure</b> is the default implementation of {@link IoTDBInfraService}.</br>
- * This class also implements the {@link ContainerService} interface.</br>
+ * The <b>IoTDBLocalContainerInfrastructure</b> is the default implementation of {@link IoTDBInfraService}.<br>
+ * This class also implements the {@link ContainerService} interface.<br>
  * It is the infrastructure that will be used by camel to create the container for testing
  */
 @InfraService(

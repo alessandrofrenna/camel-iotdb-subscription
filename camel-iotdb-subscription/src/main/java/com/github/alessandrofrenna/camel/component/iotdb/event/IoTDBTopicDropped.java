@@ -17,7 +17,7 @@
 package com.github.alessandrofrenna.camel.component.iotdb.event;
 
 /**
- * The <b>IoTDBTopicDropped</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.</br> The event is
+ * The <b>IoTDBTopicDropped</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.<br> The event is
  * published by an IotDBTopicProducer when processed and action=drop.
  */
 public class IoTDBTopicDropped extends AbstractIoTDBComponentEvent {

@@ -33,9 +33,9 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBStopAllTopic
 import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped;
 
 /**
- * The <b>IoTDBTopicProducer</b> extends the camel {@link DefaultProducer}.</br>It is used to create and/or drop topic
- * using a {@link IoTDBTopicManager}.</br> On topic drop it fires an {@link IoTDBTopicDropped} event.</br>This class
- * implements the {@link EventPublisher} interface because it is able to publish events: </br>
+ * The <b>IoTDBTopicProducer</b> extends the camel {@link DefaultProducer}.<br>It is used to create and/or drop topic
+ * using a {@link IoTDBTopicManager}.<br> On topic drop it fires an {@link IoTDBTopicDropped} event.<br>This class
+ * implements the {@link EventPublisher} interface because it is able to publish events: <br>
  *
  * <ul>
  *   <li>
@@ -74,7 +74,7 @@ class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
     }
 
     /**
-     * Dispatch the operation received in {@link IoTDBTopicProducerConfiguration#getAction()}.</br>If action="create" an IoTDB topic
+     * Dispatch the operation received in {@link IoTDBTopicProducerConfiguration#getAction()}.<br>If action="create" an IoTDB topic
      * will be created it doesn't exist. If action="drop" an IoTDB topic will be dropped if it does exist.
      *
      * @param exchange the message exchange

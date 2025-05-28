@@ -20,7 +20,7 @@ import org.apache.camel.test.infra.common.services.ContainerTestService;
 import org.apache.camel.test.infra.common.services.TestService;
 
 /**
- * The <b>IoTDBService</b> interface extends {@link IoTDBInfraService}, {@link TestService} and {@link ContainerTestService}.</br>
+ * The <b>IoTDBService</b> interface extends {@link IoTDBInfraService}, {@link TestService} and {@link ContainerTestService}.<br>
  * It is used inside {@link IoTDBServiceFactory#createService()} and is implemented by:
  * <ul>
  *     <li>{@link IoTDBServiceFactory.IoTDBRemoteContainerService}</li>
