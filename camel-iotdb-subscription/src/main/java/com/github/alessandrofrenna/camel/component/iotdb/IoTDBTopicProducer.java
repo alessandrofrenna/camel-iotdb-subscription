@@ -123,7 +123,7 @@ class IoTDBTopicProducer extends DefaultProducer implements EventPublisher {
                         // Step 3: delete the previously stopped routes
                         LOG.debug("Publishing {} for topic '{}'", IoTDBTopicDropped.class.getSimpleName(), topicName);
                         publishEvent(new IoTDBTopicDropped(this, topicName));
-                    } catch (RuntimeException e) {
+                    } catch (RuntimeCamelException e) {
                         // Fallback: id drop fails restart the previously stopped routes
                         LOG.debug(
                                 "Publishing {} for topic '{}' to resume all stopped consumers",

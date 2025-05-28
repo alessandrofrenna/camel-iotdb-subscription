@@ -110,14 +110,14 @@ public class IoTDBTopicProducerTest extends IoTDBTestSupport {
     }
 
     @Test
-    void create_topic_successfully() {
+    void createTopic_shouldBeSuccessful() {
         assertFalse(topicExists(PRODUCER_TOPIC_CREATE), "Topic should not exist before creation");
         template.sendBody("direct:createTopic", null);
         assertTrue(topicExists(PRODUCER_TOPIC_CREATE), "Topic should exist after creation");
     }
 
     @Test
-    void when_topic_already_exists_create_topic_should_not_fail() {
+    void when_topicAlreadyExists_createTopicShouldNotFail() {
         createTopicQuietly(PRODUCER_TOPIC_CREATE_EXISTING, TIMESERIES_PATH);
 
         assertTrue(topicExists(PRODUCER_TOPIC_CREATE_EXISTING), "Topic should be pre-created");
@@ -126,7 +126,7 @@ public class IoTDBTopicProducerTest extends IoTDBTestSupport {
     }
 
     @Test
-    void drop_existing_topic_should_succeed() throws Exception {
+    void dropExistingTopic_shouldSucceed() throws Exception {
         createTopicQuietly(PRODUCER_TOPIC_DROP, TIMESERIES_PATH);
         assertTrue(topicExists(PRODUCER_TOPIC_DROP), "Topic should be pre-created for drop test");
 
@@ -147,7 +147,7 @@ public class IoTDBTopicProducerTest extends IoTDBTestSupport {
     }
 
     @Test
-    void drop_non_existing_topic_should_succeed() {
+    void dropNonExistingTopic_shouldSucceed() {
         assertFalse(topicExists(PRODUCER_TOPIC_DROP_NON_EXISTING), "Topic should not exist before drop attempt");
         Exchange exchange = template.send("direct:dropNonExistingTopic", (e) -> {});
 
@@ -161,7 +161,7 @@ public class IoTDBTopicProducerTest extends IoTDBTestSupport {
     }
 
     @Test
-    void when_path_is_not_defined_on_topic_creation_the_producer_should_throw_an_exception() {
+    void when_pathIsNotDefinedOnTopicCreation_theProducerShouldThrowAnException() {
         // We expect an exception during the processing of this route
         Exchange exchange = template.send("direct:createTopicNoPath", ex -> {});
         Exception caughtException = exchange.getException();
