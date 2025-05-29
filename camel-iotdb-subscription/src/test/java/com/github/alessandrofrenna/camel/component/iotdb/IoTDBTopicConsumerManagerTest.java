@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
@@ -45,8 +46,8 @@ public class IoTDBTopicConsumerManagerTest {
     static class TestableManager extends IoTDBTopicConsumerManager.Default {
         final SubscriptionPushConsumer mockConsumer = mock(SubscriptionPushConsumer.class);
 
-        TestableManager(IoTDBSessionConfiguration cfg) {
-            super(cfg);
+        TestableManager(Supplier<IoTDBSessionConfiguration> cfgSupplier) {
+            super(cfgSupplier);
         }
 
         @Override
@@ -84,7 +85,7 @@ public class IoTDBTopicConsumerManagerTest {
         topicConsumerConfiguration = new IoTDBTopicConsumerConfiguration();
         topicConsumerConfiguration.setGroupId("group_a");
         topicConsumerConfiguration.setConsumerId("consumer_a");
-        consumerManager = new TestableManager(new IoTDBSessionConfiguration("h", 1234, "u", "p"));
+        consumerManager = new TestableManager(() -> new IoTDBSessionConfiguration("h", 1234, "u", "p"));
         consumerRegistry = getField(consumerManager, "consumerRegistry");
         topicAwareConsumeListener = new TopicAwareConsumeListener("test_topic1", consumeListener);
     }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
 import org.apache.iotdb.session.subscription.consumer.AckStrategy;
@@ -82,7 +83,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
      */
     class Default implements IoTDBTopicConsumerManager {
         private static final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumerManager.class);
-        private final IoTDBSessionConfiguration sessionConfiguration;
+        private final Supplier<IoTDBSessionConfiguration> sessionConfigurationSupplier;
         private final Map<PushConsumerKey, SubscriptionPushConsumer> consumerRegistry = new ConcurrentHashMap<>();
         private final Map<PushConsumerKey, RoutedConsumeListener> routedConsumeListenerRegistry =
                 new ConcurrentHashMap<>();
@@ -90,10 +91,10 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
         /**
          * Create an {@link IoTDBTopicConsumerManager} instance.
          *
-         * @param sessionConfiguration needed to create the consumer
+         * @param sessionConfigurationSupplier config supplier needed to create the consumer
          */
-        public Default(IoTDBSessionConfiguration sessionConfiguration) {
-            this.sessionConfiguration = sessionConfiguration;
+        public Default(Supplier<IoTDBSessionConfiguration> sessionConfigurationSupplier) {
+            this.sessionConfigurationSupplier = sessionConfigurationSupplier;
         }
 
         /**
@@ -197,6 +198,7 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
          */
         SubscriptionPushConsumer createNewPushConsumer(
                 IoTDBTopicConsumerConfiguration consumerCfg, ConsumeListener consumeListener) {
+            var sessionConfiguration = sessionConfigurationSupplier.get();
             var consumerBuilder = new StatefulSubscriptionPushConsumer.Builder()
                     .host(sessionConfiguration.host())
                     .port(sessionConfiguration.port())

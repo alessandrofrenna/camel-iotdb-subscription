@@ -19,6 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration.*;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Endpoint;
@@ -185,18 +186,23 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     @Override
     protected void doInit() throws Exception {
         super.doInit();
-        final var sessionConfiguration = new IoTDBSessionConfiguration(getHost(), getPort(), getUser(), getPassword());
-        consumerManager = new IoTDBTopicConsumerManager.Default(sessionConfiguration);
+        final Supplier<IoTDBSessionConfiguration> sessionConfSupplier =
+                () -> new IoTDBSessionConfiguration(getHost(), getPort(), getUser(), getPassword());
+
+        consumerManager = new IoTDBTopicConsumerManager.Default(sessionConfSupplier);
         routesRegistry = new IoTDBRoutesRegistry.Default(consumerManager);
         eventListener = new IoTDBSubscriptionEventListener(routesRegistry);
         configureEventNotifier(eventListener);
 
-        topicManager = new IoTDBTopicManager.Default(() -> new SubscriptionSession(
-                sessionConfiguration.host(),
-                sessionConfiguration.port(),
-                sessionConfiguration.user(),
-                sessionConfiguration.password(),
-                SessionConfig.DEFAULT_MAX_FRAME_SIZE));
+        topicManager = new IoTDBTopicManager.Default(() -> {
+            var sessionConfiguration = sessionConfSupplier.get();
+            return new SubscriptionSession(
+                    sessionConfiguration.host(),
+                    sessionConfiguration.port(),
+                    sessionConfiguration.user(),
+                    sessionConfiguration.password(),
+                    SessionConfig.DEFAULT_MAX_FRAME_SIZE);
+        });
 
         final CamelContext camelContext = getCamelContext();
         if (camelContext == null) {

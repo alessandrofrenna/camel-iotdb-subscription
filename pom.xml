@@ -3,7 +3,7 @@
 
     <groupId>com.github.alessandrofrenna</groupId>
     <artifactId>camel-iotdb-subscription-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <url>https://github.com/alessandrofrenna/camel-iotdb-subscription</url>
 
     <packaging>pom</packaging>
@@ -147,6 +147,15 @@
                 <configuration>
                     <release>17</release>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>recompile</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <phase>process-classes</phase>
+                    </execution>
+                </executions>
             </plugin>
             <!-- maven resource compiler -->
             <plugin>
