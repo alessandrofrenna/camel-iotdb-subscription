@@ -25,6 +25,7 @@ public class IoTDBSubscriptionEndpointUriFactory extends org.apache.camel.suppor
     static {
         Set<String> props = new HashSet<>(11);
         props.add("action");
+        props.add("autoPollIntervalMs");
         props.add("bridgeErrorHandler");
         props.add("consumerId");
         props.add("exceptionHandler");
@@ -33,7 +34,6 @@ public class IoTDBSubscriptionEndpointUriFactory extends org.apache.camel.suppor
         props.add("heartbeatIntervalMs");
         props.add("lazyStartProducer");
         props.add("path");
-        props.add("syncIntervalMs");
         props.add("topic");
         PROPERTY_NAMES = Collections.unmodifiableSet(props);
         SECRET_PROPERTY_NAMES = Collections.emptySet();

@@ -205,7 +205,8 @@ public interface IoTDBTopicConsumerManager extends AutoCloseable {
                     .username(sessionConfiguration.user())
                     .password(sessionConfiguration.password())
                     .heartbeatIntervalMs(consumerCfg.getHeartbeatIntervalMs())
-                    .endpointsSyncIntervalMs(consumerCfg.getSyncIntervalMs())
+                    .autoPollIntervalMs(consumerCfg.getAutoPollIntervalMs())
+                    .autoPollTimeoutMs(consumerCfg.getAutoPollIntervalMs() * 2)
                     .ackStrategy(AckStrategy.AFTER_CONSUME)
                     .consumeListener(consumeListener);
             consumerCfg.getConsumerId().ifPresent(consumerBuilder::consumerId);

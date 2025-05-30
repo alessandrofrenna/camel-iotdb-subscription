@@ -48,10 +48,9 @@ public class IoTDBTopicConsumerConfiguration {
 
     @UriParam
     @Metadata(
-            title = "Synchronization interval",
-            description =
-                    "The consumer will ping IoTDB to synchronize its state after this interval of time in millisecond passes")
-    private Long syncIntervalMs;
+            title = "Auto poll interval",
+            description = "The consumer will poll from IoTDB after this interval of time in millisecond passes")
+    private Long autoPollIntervalMs;
 
     IoTDBTopicConsumerConfiguration() {}
 
@@ -116,24 +115,24 @@ public class IoTDBTopicConsumerConfiguration {
     }
 
     /**
-     * Get the synchronization interval used by the consumer to sync against IoTDB.<br> This value is optional. If not
-     * provided this method returns the default value of 120_000ms (120s).
+     * Get the time interval at which the consumer automatically pulls data.<br> This value is optional. If not
+     * provided this method returns the default value of 5_000ms (5s).
      *
-     * @return the synchronization interval in milliseconds
+     * @return the auto poll interval in milliseconds
      */
-    public Long getSyncIntervalMs() {
-        if (syncIntervalMs == null) {
-            syncIntervalMs = 120_000L;
+    public Long getAutoPollIntervalMs() {
+        if (autoPollIntervalMs == null) {
+            autoPollIntervalMs = 5_000L;
         }
-        return syncIntervalMs;
+        return autoPollIntervalMs;
     }
 
     /**
-     * Set the synchronization interval from the route uri parameters.
+     * Set the time interval at which the consumer automatically pulls data.
      *
-     * @param syncIntervalMs milliseconds interval used by the consumer to sync against IoTDB
+     * @param autoPollIntervalMs the auto poll time interval in milliseconds
      */
-    public void setSyncIntervalMs(Long syncIntervalMs) {
-        this.syncIntervalMs = syncIntervalMs;
+    public void setAutoPollIntervalMs(Long autoPollIntervalMs) {
+        this.autoPollIntervalMs = autoPollIntervalMs;
     }
 }

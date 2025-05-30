@@ -24,6 +24,8 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         IoTDBTopicEndpoint target = (IoTDBTopicEndpoint) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": target.getProducerCfg().setAction(property(camelContext, java.lang.String.class, value)); return true;
+        case "autopollintervalms":
+        case "autoPollIntervalMs": target.getConsumerCfg().setAutoPollIntervalMs(property(camelContext, java.lang.Long.class, value)); return true;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": target.setBridgeErrorHandler(property(camelContext, boolean.class, value)); return true;
         case "consumerid":
@@ -39,8 +41,6 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         case "lazystartproducer":
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "path": target.getProducerCfg().setPath(property(camelContext, java.lang.String.class, value)); return true;
-        case "syncintervalms":
-        case "syncIntervalMs": target.getConsumerCfg().setSyncIntervalMs(property(camelContext, java.lang.Long.class, value)); return true;
         default: return false;
         }
     }
@@ -49,6 +49,8 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
     public Class<?> getOptionType(String name, boolean ignoreCase) {
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": return java.lang.String.class;
+        case "autopollintervalms":
+        case "autoPollIntervalMs": return java.lang.Long.class;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return boolean.class;
         case "consumerid":
@@ -64,8 +66,6 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         case "lazystartproducer":
         case "lazyStartProducer": return boolean.class;
         case "path": return java.lang.String.class;
-        case "syncintervalms":
-        case "syncIntervalMs": return java.lang.Long.class;
         default: return null;
         }
     }
@@ -75,6 +75,8 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         IoTDBTopicEndpoint target = (IoTDBTopicEndpoint) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": return target.getProducerCfg().getAction();
+        case "autopollintervalms":
+        case "autoPollIntervalMs": return target.getConsumerCfg().getAutoPollIntervalMs();
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return target.isBridgeErrorHandler();
         case "consumerid":
@@ -90,8 +92,6 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         case "lazystartproducer":
         case "lazyStartProducer": return target.isLazyStartProducer();
         case "path": return target.getProducerCfg().getPath();
-        case "syncintervalms":
-        case "syncIntervalMs": return target.getConsumerCfg().getSyncIntervalMs();
         default: return null;
         }
     }
