@@ -16,15 +16,16 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PullConsumerKey;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
-import org.apache.camel.Route;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.DefaultConsumer;
+import org.apache.camel.support.DefaultScheduledPollConsumer;
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
 import org.apache.iotdb.session.subscription.consumer.ConsumeResult;
+import org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +45,12 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicConsume
  *   </li>
  * </ul>
  */
-class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
+class IoTDBTopicConsumer extends DefaultScheduledPollConsumer implements EventPublisher {
     private final Logger LOG = LoggerFactory.getLogger(IoTDBTopicConsumer.class);
 
     private final IoTDBTopicEndpoint endpoint;
     private final IoTDBTopicConsumerManager consumerManager;
-    private SubscriptionPushConsumer pushConsumer;
+    private SubscriptionPullConsumer pushConsumer;
 
     /**
      * Create an <b>IoTDBTopicConsumer</b> instance.
@@ -65,39 +66,24 @@ class IoTDBTopicConsumer extends DefaultConsumer implements EventPublisher {
     }
 
     /**
-     * Get the id of the route associated to the endpoint.
-     *
-     * @return the camel route id
-     * @throws RuntimeCamelException if the route is null
-     */
-    public String getRouteId() {
-        Route route = getRoute();
-        if (route == null) {
-            throw new RuntimeCamelException("route is null, it should not be null");
-        }
-        return route.getRouteId();
-    }
-
-    /**
      * Get the push consumer key of the push consumer created by an instance of this class.
      *
      * @return the push consumer key
      */
-    public PushConsumerKey getPushConsumerKey() {
-        return new PushConsumerKey(pushConsumer.getConsumerGroupId(), pushConsumer.getConsumerId());
+    public PullConsumerKey getPullConsumerKey() {
+        return new PullConsumerKey(pushConsumer.getConsumerGroupId(), pushConsumer.getConsumerId());
     }
 
     @Override
     protected void doStart() {
         final String topic = endpoint.getTopic();
-        var consumeListener = new TopicAwareConsumeListener(endpoint.getTopic(), this.defaultConsumeListener());
-        pushConsumer = consumerManager.createPushConsumer(endpoint.getConsumerCfg(), consumeListener);
+        pushConsumer = consumerManager.createPullConsumer(endpoint.getConsumerCfg());
 
         try {
             super.doStart();
             pushConsumer.open();
             pushConsumer.subscribe(topic);
-            publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, getRouteId()));
+            publishEvent(new IoTDBTopicConsumerSubscribed(this, topic, super.getRouteId()));
             LOG.info(
                     "IoTDBTopicConsumer consumer started and subscribed to event published for '{}' IOTDB topic",
                     topic);

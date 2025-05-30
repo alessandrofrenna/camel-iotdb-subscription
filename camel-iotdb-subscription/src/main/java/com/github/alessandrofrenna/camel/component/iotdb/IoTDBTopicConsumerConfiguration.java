@@ -47,10 +47,8 @@ public class IoTDBTopicConsumerConfiguration {
     private Long heartbeatIntervalMs;
 
     @UriParam
-    @Metadata(
-            title = "Auto poll interval",
-            description = "The consumer will poll from IoTDB after this interval of time in millisecond passes")
-    private Long autoPollIntervalMs;
+    @Metadata(title = "Poll timeout", description = "The poll consumer will use this timeout on polling")
+    private Long pollTimeoutMs;
 
     IoTDBTopicConsumerConfiguration() {}
 
@@ -115,24 +113,24 @@ public class IoTDBTopicConsumerConfiguration {
     }
 
     /**
-     * Get the time interval at which the consumer automatically pulls data.<br> This value is optional. If not
-     * provided this method returns the default value of 5_000ms (5s).
+     * Get the topic poll timeout.<br> This value is optional. If not
+     * provided this method returns the default value of 30_000ms (30s).
      *
-     * @return the auto poll interval in milliseconds
+     * @return the time in milliseconds
      */
-    public Long getAutoPollIntervalMs() {
-        if (autoPollIntervalMs == null) {
-            autoPollIntervalMs = 5_000L;
+    public Long getPollTimeoutMs() {
+        if (pollTimeoutMs == null) {
+            pollTimeoutMs = 30_000L;
         }
-        return autoPollIntervalMs;
+        return pollTimeoutMs;
     }
 
     /**
-     * Set the time interval at which the consumer automatically pulls data.
+     * Set the topic poll timeout.
      *
-     * @param autoPollIntervalMs the auto poll time interval in milliseconds
+     * @param pollTimeoutMs time in milliseconds
      */
-    public void setAutoPollIntervalMs(Long autoPollIntervalMs) {
-        this.autoPollIntervalMs = autoPollIntervalMs;
+    public void setPollTimeoutMs(Long pollTimeoutMs) {
+        this.pollTimeoutMs = pollTimeoutMs;
     }
 }

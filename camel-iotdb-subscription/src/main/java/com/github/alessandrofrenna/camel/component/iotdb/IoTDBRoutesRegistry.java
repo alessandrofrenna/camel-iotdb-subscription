@@ -16,7 +16,7 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PullConsumerKey;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +46,7 @@ import com.github.alessandrofrenna.camel.component.iotdb.event.IoTDBTopicDropped
 public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
 
     /**
-     * Register a route after a {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer} is created.
+     * Register a route after a {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer} is created.
      *
      * @param event of type {@link IoTDBTopicConsumerSubscribed}
      */
@@ -304,7 +304,7 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
             // Let's make our intent clear! Only stopped routes could be removed when calling this method
             if (routeStatus != null && routeStatus.isStopped()) {
                 try {
-                    PushConsumerKey consumerKey = null;
+                    PullConsumerKey consumerKey = null;
                     final Route route = ctx.getRoute(routeId);
                     if (route == null) {
                         LOG.warn(
@@ -314,12 +314,12 @@ public interface IoTDBRoutesRegistry extends CamelContextAware, AutoCloseable {
                     }
                     if (route.getConsumer() != null
                             && route.getConsumer() instanceof IoTDBTopicConsumer topicConsumer) {
-                        consumerKey = topicConsumer.getPushConsumerKey();
+                        consumerKey = topicConsumer.getPullConsumerKey();
                     }
                     ctx.removeRoute(routeId);
                     LOG.debug("Required 'remove' request for route '{}' ", routeId);
                     if (consumerKey != null) {
-                        consumerManager.destroyPushConsumer(consumerKey);
+                        consumerManager.destroyPullConsumer(consumerKey);
                     }
                 } catch (Exception e) {
                     LOG.error("Failed to remove route '{}': {}", routeId, e.getMessage(), e);

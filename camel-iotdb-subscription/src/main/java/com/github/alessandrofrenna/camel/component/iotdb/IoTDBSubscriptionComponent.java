@@ -184,8 +184,7 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
     }
 
     @Override
-    protected void doInit() throws Exception {
-        super.doInit();
+    protected void doBuild() throws Exception {
         final Supplier<IoTDBSessionConfiguration> sessionConfSupplier =
                 () -> new IoTDBSessionConfiguration(getHost(), getPort(), getUser(), getPassword());
 
@@ -216,6 +215,8 @@ public class IoTDBSubscriptionComponent extends HealthCheckComponent {
             camelContext.getManagementStrategy().addEventNotifier(eventListener);
             LOG.debug("Registered IoTDBTopicEventListener with CamelContext [{}].", camelContext.getName());
         }
+
+        super.doBuild();
     }
 
     @Override

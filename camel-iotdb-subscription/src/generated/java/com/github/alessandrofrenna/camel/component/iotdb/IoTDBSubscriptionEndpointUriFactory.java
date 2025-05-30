@@ -23,21 +23,39 @@ public class IoTDBSubscriptionEndpointUriFactory extends org.apache.camel.suppor
     private static final Set<String> SECRET_PROPERTY_NAMES;
     private static final Set<String> MULTI_VALUE_PREFIXES;
     static {
-        Set<String> props = new HashSet<>(11);
+        Set<String> props = new HashSet<>(27);
         props.add("action");
-        props.add("autoPollIntervalMs");
+        props.add("backoffErrorThreshold");
+        props.add("backoffIdleThreshold");
+        props.add("backoffMultiplier");
         props.add("bridgeErrorHandler");
         props.add("consumerId");
+        props.add("delay");
         props.add("exceptionHandler");
         props.add("exchangePattern");
+        props.add("greedy");
         props.add("groupId");
         props.add("heartbeatIntervalMs");
+        props.add("initialDelay");
         props.add("lazyStartProducer");
         props.add("path");
+        props.add("pollStrategy");
+        props.add("pollTimeoutMs");
+        props.add("repeatCount");
+        props.add("runLoggingLevel");
+        props.add("scheduledExecutorService");
+        props.add("scheduler");
+        props.add("schedulerProperties");
+        props.add("sendEmptyMessageWhenIdle");
+        props.add("startScheduler");
+        props.add("timeUnit");
         props.add("topic");
+        props.add("useFixedDelay");
         PROPERTY_NAMES = Collections.unmodifiableSet(props);
         SECRET_PROPERTY_NAMES = Collections.emptySet();
-        MULTI_VALUE_PREFIXES = Collections.emptySet();
+        Set<String> prefixes = new HashSet<>(1);
+        prefixes.add("scheduler.");
+        MULTI_VALUE_PREFIXES = Collections.unmodifiableSet(prefixes);
     }
 
     @Override

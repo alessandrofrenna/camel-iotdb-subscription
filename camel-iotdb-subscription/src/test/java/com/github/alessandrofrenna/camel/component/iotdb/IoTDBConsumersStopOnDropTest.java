@@ -28,7 +28,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.spi.CamelEvent;
 import org.apache.camel.spi.EventNotifier;
 import org.apache.camel.support.EventNotifierSupport;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -83,21 +82,15 @@ public class IoTDBConsumersStopOnDropTest extends IoTDBTestSupport {
             @Override
             public void configure() {
                 from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_1&consumerId=first_consumer")
-                        .to("mock:consumer1");
+                        .to("mock:result");
                 from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_1&consumerId=second_consumer")
-                        .to("mock:consumer2");
+                        .to("mock:result");
                 from("iotdb-subscription:" + RAIN_TOPIC + "?groupId=group_2&consumerId=first_consumer")
-                        .to("mock:consumer3");
+                        .to("mock:result");
                 from("iotdb-subscription:" + TEMPERATURE_TOPIC + "?groupId=group_1&consumerId=first_consumer")
-                        .to("mock:consumer1");
+                        .to("mock:result");
             }
         });
-    }
-
-    @Override
-    @AfterEach
-    public void cleanupResources() {
-        super.cleanupResources();
     }
 
     @Test

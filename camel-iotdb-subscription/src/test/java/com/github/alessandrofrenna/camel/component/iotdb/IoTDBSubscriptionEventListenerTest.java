@@ -42,7 +42,7 @@ public class IoTDBSubscriptionEventListenerTest {
     private IoTDBSubscriptionEventListener eventListener;
 
     @Test
-    void when_subscribedEventisPublished_theRegistryShouldHandleTheEvent() {
+    void when_subscribedEventsPublished_theRegistryShouldHandleTheEvent() {
         final IoTDBTopicConsumerSubscribed subscribedEvent = mock(IoTDBTopicConsumerSubscribed.class);
         eventListener.notify(subscribedEvent);
         verify(registry).registerRouteAfterConsumerSubscription(subscribedEvent);

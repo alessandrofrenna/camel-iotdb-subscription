@@ -16,7 +16,7 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PullConsumerKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.iotdb.session.subscription.consumer.ConsumeListener;
-import org.apache.iotdb.session.subscription.consumer.SubscriptionPushConsumer;
+import org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,15 +44,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class IoTDBTopicConsumerManagerTest {
     // A small subclass for testing that returns a mocked consumer
     static class TestableManager extends IoTDBTopicConsumerManager.Default {
-        final SubscriptionPushConsumer mockConsumer = mock(SubscriptionPushConsumer.class);
+        final SubscriptionPullConsumer mockConsumer = mock(SubscriptionPullConsumer.class);
 
         TestableManager(Supplier<IoTDBSessionConfiguration> cfgSupplier) {
             super(cfgSupplier);
         }
 
         @Override
-        protected SubscriptionPushConsumer createNewPushConsumer(
-                IoTDBTopicConsumerConfiguration cfg, ConsumeListener listener) {
+        protected SubscriptionPullConsumer createNewPullConsumer(IoTDBTopicConsumerConfiguration cfg) {
             when(mockConsumer.getConsumerGroupId()).thenReturn(cfg.getGroupId().get());
             when(mockConsumer.getConsumerId()).thenReturn(cfg.getConsumerId().get());
             return mockConsumer;
@@ -77,8 +76,7 @@ public class IoTDBTopicConsumerManagerTest {
     private IoTDBTopicConsumerConfiguration topicConsumerConfiguration;
 
     private TestableManager consumerManager;
-    private Map<PushConsumerKey, SubscriptionPushConsumer> consumerRegistry;
-    private TopicAwareConsumeListener topicAwareConsumeListener;
+    private Map<PullConsumerKey, SubscriptionPullConsumer> consumerRegistry;
 
     @BeforeEach
     void setUp() {
@@ -87,7 +85,6 @@ public class IoTDBTopicConsumerManagerTest {
         topicConsumerConfiguration.setConsumerId("consumer_a");
         consumerManager = new TestableManager(() -> new IoTDBSessionConfiguration("h", 1234, "u", "p"));
         consumerRegistry = getField(consumerManager, "consumerRegistry");
-        topicAwareConsumeListener = new TopicAwareConsumeListener("test_topic1", consumeListener);
     }
 
     @AfterEach
@@ -97,13 +94,12 @@ public class IoTDBTopicConsumerManagerTest {
 
     @Test
     void when_multipleConsumersWithTheSameKeyAreCreated_theSameConsumerInstance_shouldBeReturned() {
-        final PushConsumerKey consumerKey = new PushConsumerKey(
+        final PullConsumerKey consumerKey = new PullConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
 
-        var topicAwareConsumeListener2 = topicAwareConsumeListener.reuseWithTopic("test_topic2");
-        var c1 = consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
-        var c2 = consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener2);
+        var c1 = consumerManager.createPullConsumer(topicConsumerConfiguration);
+        var c2 = consumerManager.createPullConsumer(topicConsumerConfiguration);
 
         assertSame(consumerManager.mockConsumer, c1, "First call should return our mock");
         assertSame(consumerManager.mockConsumer, c2, "Second call with same key should return same mock");
@@ -117,14 +113,13 @@ public class IoTDBTopicConsumerManagerTest {
         secondCfg.setGroupId("group_b");
         secondCfg.setConsumerId("consumer_b");
 
-        var topicAwareConsumeListener2 = topicAwareConsumeListener.reuseWithTopic("test_topic2");
-        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
-        SubscriptionPushConsumer result = consumerManager.createPushConsumer(secondCfg, topicAwareConsumeListener2);
+        consumerManager.createPullConsumer(topicConsumerConfiguration);
+        SubscriptionPullConsumer result = consumerManager.createPullConsumer(secondCfg);
 
-        final PushConsumerKey firstConsumerKey = new PushConsumerKey(
+        final PullConsumerKey firstConsumerKey = new PullConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
-        final PushConsumerKey secondConsumerKey = new PushConsumerKey(
+        final PullConsumerKey secondConsumerKey = new PullConsumerKey(
                 secondCfg.getGroupId().get(), secondCfg.getConsumerId().get());
         assertEquals(2, consumerRegistry.size());
         assertTrue(consumerRegistry.containsKey(firstConsumerKey));
@@ -135,11 +130,11 @@ public class IoTDBTopicConsumerManagerTest {
 
     @Test
     void when_aConsumerIsDestroyed_theCloseMethodShouldBeInvoked_andTheConsumerShouldBeRemovedFromTheRegistry() {
-        final PushConsumerKey consumerKey = new PushConsumerKey(
+        final PullConsumerKey consumerKey = new PullConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
-        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
-        consumerManager.destroyPushConsumer(consumerKey);
+        consumerManager.createPullConsumer(topicConsumerConfiguration);
+        consumerManager.destroyPullConsumer(consumerKey);
         verify(consumerManager.mockConsumer).close();
         assertFalse(consumerRegistry.containsKey(consumerKey));
         assertTrue(consumerRegistry.isEmpty(), "Registry must be cleared after destroyPushConsumer");
@@ -147,22 +142,22 @@ public class IoTDBTopicConsumerManagerTest {
 
     @Test
     void when_theConsumerKeyOfANonExistingConsumerIsUsed_nothingShouldBeDone() {
-        PushConsumerKey missingKey = new PushConsumerKey(null, null);
-        consumerManager.destroyPushConsumer(missingKey);
+        PullConsumerKey missingKey = new PullConsumerKey(null, null);
+        consumerManager.destroyPullConsumer(missingKey);
         assertTrue(consumerRegistry.isEmpty());
     }
 
     @Test
     void when_theConsumerToDestroyIsSubscribedToMultipleTopics_anExceptionShouldBeThrown_andItShouldNotBeRemoved() {
-        final PushConsumerKey consumerKey = new PushConsumerKey(
+        final PullConsumerKey consumerKey = new PullConsumerKey(
                 topicConsumerConfiguration.getGroupId().get(),
                 topicConsumerConfiguration.getConsumerId().get());
-        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
+        consumerManager.createPullConsumer(topicConsumerConfiguration);
 
         doThrow(new IllegalStateException("Close failed"))
                 .when(consumerManager.mockConsumer)
                 .close();
-        consumerManager.destroyPushConsumer(consumerKey);
+        consumerManager.destroyPullConsumer(consumerKey);
 
         verify(consumerManager.mockConsumer).close();
         assertFalse(consumerRegistry.isEmpty());
@@ -176,8 +171,8 @@ public class IoTDBTopicConsumerManagerTest {
         secondCfg.setGroupId("group_b");
         secondCfg.setConsumerId("consumer_b");
 
-        consumerManager.createPushConsumer(topicConsumerConfiguration, topicAwareConsumeListener);
-        consumerManager.createPushConsumer(secondCfg, topicAwareConsumeListener);
+        consumerManager.createPullConsumer(topicConsumerConfiguration);
+        consumerManager.createPullConsumer(secondCfg);
         consumerManager.close();
 
         verify(consumerManager.mockConsumer, times(2)).close();

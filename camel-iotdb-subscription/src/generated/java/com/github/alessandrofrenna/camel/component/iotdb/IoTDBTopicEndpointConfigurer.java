@@ -24,23 +24,52 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         IoTDBTopicEndpoint target = (IoTDBTopicEndpoint) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": target.getProducerCfg().setAction(property(camelContext, java.lang.String.class, value)); return true;
-        case "autopollintervalms":
-        case "autoPollIntervalMs": target.getConsumerCfg().setAutoPollIntervalMs(property(camelContext, java.lang.Long.class, value)); return true;
+        case "backofferrorthreshold":
+        case "backoffErrorThreshold": target.setBackoffErrorThreshold(property(camelContext, int.class, value)); return true;
+        case "backoffidlethreshold":
+        case "backoffIdleThreshold": target.setBackoffIdleThreshold(property(camelContext, int.class, value)); return true;
+        case "backoffmultiplier":
+        case "backoffMultiplier": target.setBackoffMultiplier(property(camelContext, int.class, value)); return true;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": target.setBridgeErrorHandler(property(camelContext, boolean.class, value)); return true;
         case "consumerid":
         case "consumerId": target.getConsumerCfg().setConsumerId(property(camelContext, java.lang.String.class, value)); return true;
+        case "delay": target.setDelay(property(camelContext, long.class, value)); return true;
         case "exceptionhandler":
         case "exceptionHandler": target.setExceptionHandler(property(camelContext, org.apache.camel.spi.ExceptionHandler.class, value)); return true;
         case "exchangepattern":
         case "exchangePattern": target.setExchangePattern(property(camelContext, org.apache.camel.ExchangePattern.class, value)); return true;
+        case "greedy": target.setGreedy(property(camelContext, boolean.class, value)); return true;
         case "groupid":
         case "groupId": target.getConsumerCfg().setGroupId(property(camelContext, java.lang.String.class, value)); return true;
         case "heartbeatintervalms":
         case "heartbeatIntervalMs": target.getConsumerCfg().setHeartbeatIntervalMs(property(camelContext, java.lang.Long.class, value)); return true;
+        case "initialdelay":
+        case "initialDelay": target.setInitialDelay(property(camelContext, long.class, value)); return true;
         case "lazystartproducer":
         case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "path": target.getProducerCfg().setPath(property(camelContext, java.lang.String.class, value)); return true;
+        case "pollstrategy":
+        case "pollStrategy": target.setPollStrategy(property(camelContext, org.apache.camel.spi.PollingConsumerPollStrategy.class, value)); return true;
+        case "polltimeoutms":
+        case "pollTimeoutMs": target.getConsumerCfg().setPollTimeoutMs(property(camelContext, java.lang.Long.class, value)); return true;
+        case "repeatcount":
+        case "repeatCount": target.setRepeatCount(property(camelContext, long.class, value)); return true;
+        case "runlogginglevel":
+        case "runLoggingLevel": target.setRunLoggingLevel(property(camelContext, org.apache.camel.LoggingLevel.class, value)); return true;
+        case "scheduledexecutorservice":
+        case "scheduledExecutorService": target.setScheduledExecutorService(property(camelContext, java.util.concurrent.ScheduledExecutorService.class, value)); return true;
+        case "scheduler": target.setScheduler(property(camelContext, java.lang.Object.class, value)); return true;
+        case "schedulerproperties":
+        case "schedulerProperties": target.setSchedulerProperties(property(camelContext, java.util.Map.class, value)); return true;
+        case "sendemptymessagewhenidle":
+        case "sendEmptyMessageWhenIdle": target.setSendEmptyMessageWhenIdle(property(camelContext, boolean.class, value)); return true;
+        case "startscheduler":
+        case "startScheduler": target.setStartScheduler(property(camelContext, boolean.class, value)); return true;
+        case "timeunit":
+        case "timeUnit": target.setTimeUnit(property(camelContext, java.util.concurrent.TimeUnit.class, value)); return true;
+        case "usefixeddelay":
+        case "useFixedDelay": target.setUseFixedDelay(property(camelContext, boolean.class, value)); return true;
         default: return false;
         }
     }
@@ -49,23 +78,52 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
     public Class<?> getOptionType(String name, boolean ignoreCase) {
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": return java.lang.String.class;
-        case "autopollintervalms":
-        case "autoPollIntervalMs": return java.lang.Long.class;
+        case "backofferrorthreshold":
+        case "backoffErrorThreshold": return int.class;
+        case "backoffidlethreshold":
+        case "backoffIdleThreshold": return int.class;
+        case "backoffmultiplier":
+        case "backoffMultiplier": return int.class;
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return boolean.class;
         case "consumerid":
         case "consumerId": return java.lang.String.class;
+        case "delay": return long.class;
         case "exceptionhandler":
         case "exceptionHandler": return org.apache.camel.spi.ExceptionHandler.class;
         case "exchangepattern":
         case "exchangePattern": return org.apache.camel.ExchangePattern.class;
+        case "greedy": return boolean.class;
         case "groupid":
         case "groupId": return java.lang.String.class;
         case "heartbeatintervalms":
         case "heartbeatIntervalMs": return java.lang.Long.class;
+        case "initialdelay":
+        case "initialDelay": return long.class;
         case "lazystartproducer":
         case "lazyStartProducer": return boolean.class;
         case "path": return java.lang.String.class;
+        case "pollstrategy":
+        case "pollStrategy": return org.apache.camel.spi.PollingConsumerPollStrategy.class;
+        case "polltimeoutms":
+        case "pollTimeoutMs": return java.lang.Long.class;
+        case "repeatcount":
+        case "repeatCount": return long.class;
+        case "runlogginglevel":
+        case "runLoggingLevel": return org.apache.camel.LoggingLevel.class;
+        case "scheduledexecutorservice":
+        case "scheduledExecutorService": return java.util.concurrent.ScheduledExecutorService.class;
+        case "scheduler": return java.lang.Object.class;
+        case "schedulerproperties":
+        case "schedulerProperties": return java.util.Map.class;
+        case "sendemptymessagewhenidle":
+        case "sendEmptyMessageWhenIdle": return boolean.class;
+        case "startscheduler":
+        case "startScheduler": return boolean.class;
+        case "timeunit":
+        case "timeUnit": return java.util.concurrent.TimeUnit.class;
+        case "usefixeddelay":
+        case "useFixedDelay": return boolean.class;
         default: return null;
         }
     }
@@ -75,23 +133,61 @@ public class IoTDBTopicEndpointConfigurer extends PropertyConfigurerSupport impl
         IoTDBTopicEndpoint target = (IoTDBTopicEndpoint) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "action": return target.getProducerCfg().getAction();
-        case "autopollintervalms":
-        case "autoPollIntervalMs": return target.getConsumerCfg().getAutoPollIntervalMs();
+        case "backofferrorthreshold":
+        case "backoffErrorThreshold": return target.getBackoffErrorThreshold();
+        case "backoffidlethreshold":
+        case "backoffIdleThreshold": return target.getBackoffIdleThreshold();
+        case "backoffmultiplier":
+        case "backoffMultiplier": return target.getBackoffMultiplier();
         case "bridgeerrorhandler":
         case "bridgeErrorHandler": return target.isBridgeErrorHandler();
         case "consumerid":
         case "consumerId": return target.getConsumerCfg().getConsumerId();
+        case "delay": return target.getDelay();
         case "exceptionhandler":
         case "exceptionHandler": return target.getExceptionHandler();
         case "exchangepattern":
         case "exchangePattern": return target.getExchangePattern();
+        case "greedy": return target.isGreedy();
         case "groupid":
         case "groupId": return target.getConsumerCfg().getGroupId();
         case "heartbeatintervalms":
         case "heartbeatIntervalMs": return target.getConsumerCfg().getHeartbeatIntervalMs();
+        case "initialdelay":
+        case "initialDelay": return target.getInitialDelay();
         case "lazystartproducer":
         case "lazyStartProducer": return target.isLazyStartProducer();
         case "path": return target.getProducerCfg().getPath();
+        case "pollstrategy":
+        case "pollStrategy": return target.getPollStrategy();
+        case "polltimeoutms":
+        case "pollTimeoutMs": return target.getConsumerCfg().getPollTimeoutMs();
+        case "repeatcount":
+        case "repeatCount": return target.getRepeatCount();
+        case "runlogginglevel":
+        case "runLoggingLevel": return target.getRunLoggingLevel();
+        case "scheduledexecutorservice":
+        case "scheduledExecutorService": return target.getScheduledExecutorService();
+        case "scheduler": return target.getScheduler();
+        case "schedulerproperties":
+        case "schedulerProperties": return target.getSchedulerProperties();
+        case "sendemptymessagewhenidle":
+        case "sendEmptyMessageWhenIdle": return target.isSendEmptyMessageWhenIdle();
+        case "startscheduler":
+        case "startScheduler": return target.isStartScheduler();
+        case "timeunit":
+        case "timeUnit": return target.getTimeUnit();
+        case "usefixeddelay":
+        case "useFixedDelay": return target.isUseFixedDelay();
+        default: return null;
+        }
+    }
+
+    @Override
+    public Object getCollectionValueType(Object target, String name, boolean ignoreCase) {
+        switch (ignoreCase ? name.toLowerCase() : name) {
+        case "schedulerproperties":
+        case "schedulerProperties": return java.lang.Object.class;
         default: return null;
         }
     }

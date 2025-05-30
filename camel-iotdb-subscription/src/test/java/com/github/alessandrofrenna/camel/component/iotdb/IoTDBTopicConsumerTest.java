@@ -33,7 +33,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 import org.apache.tsfile.read.common.RowRecord;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -54,12 +53,6 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
     void setUpTestSuite() {
         createTimeseriesPathQuietly(TEMPERATURE_PATH);
         createTimeseriesPathQuietly(RAIN_PATH);
-    }
-
-    @Override
-    @AfterEach
-    public void cleanupResources() {
-        super.cleanupResources();
     }
 
     @Override
@@ -201,7 +194,7 @@ public class IoTDBTopicConsumerTest extends IoTDBTestSupport {
     }
 
     @Test
-    void onSubscriptionException_theRouteShouldBeRemoved() throws Exception {
+    void onSubscriptionException_theRouteShouldBeRemoved() {
         String MISSING_TOPIC_ROUTE_ID = "multiConsumerBRouteA";
         assertNull(context().getRoute(MISSING_TOPIC_ROUTE_ID));
 

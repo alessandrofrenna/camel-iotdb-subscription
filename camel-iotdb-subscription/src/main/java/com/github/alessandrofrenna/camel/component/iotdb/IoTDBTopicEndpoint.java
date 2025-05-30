@@ -26,6 +26,7 @@ import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.DefaultEndpoint;
+import org.apache.camel.support.ScheduledPollEndpoint;
 
 /**
  * The <b>IoTDBTopicEndpoint</b> extend the camel {@link DefaultEndpoint}.<br>It is used by camel to create producer
@@ -37,7 +38,7 @@ import org.apache.camel.support.DefaultEndpoint;
         title = "IoTDBSubscription",
         syntax = "iotdb-subscription:topic",
         category = {Category.IOT})
-class IoTDBTopicEndpoint extends DefaultEndpoint {
+class IoTDBTopicEndpoint extends ScheduledPollEndpoint {
 
     @UriPath(description = "The IoTDB topic name")
     @Metadata(
@@ -82,8 +83,8 @@ class IoTDBTopicEndpoint extends DefaultEndpoint {
      */
     @Override
     public Consumer createConsumer(Processor processor) throws Exception {
-        final IoTDBTopicConsumer consumer = new IoTDBTopicConsumer(
-                this, processor, ((IoTDBSubscriptionComponent) getComponent()).getConsumerManager());
+        final var iotdbComponent = ((IoTDBSubscriptionComponent) getComponent());
+        final var consumer = new MyConsumer(this, processor, iotdbComponent.getConsumerManager());
         configureConsumer(consumer);
         return consumer;
     }

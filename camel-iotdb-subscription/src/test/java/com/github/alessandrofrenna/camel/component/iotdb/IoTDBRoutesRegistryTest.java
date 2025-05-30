@@ -16,7 +16,7 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PushConsumerKey;
+import static com.github.alessandrofrenna.camel.component.iotdb.IoTDBTopicConsumerManager.PullConsumerKey;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -260,12 +260,12 @@ class IoTDBRoutesRegistryTest {
 
         when(camelContext.getRoute(ROUTE_ID_1)).thenReturn(route);
         when(route.getConsumer()).thenReturn(topicConsumer);
-        PushConsumerKey key1 = new PushConsumerKey("group1", "consumer1");
-        when(topicConsumer.getPushConsumerKey()).thenReturn(key1);
+        PullConsumerKey key1 = new PullConsumerKey("group1", "consumer1");
+        when(topicConsumer.getPullConsumerKey()).thenReturn(key1);
 
         routesRegistry.removeRoutesAfterTopicDrop(new IoTDBTopicDropped(new Object(), TOPIC_1));
         verify(camelContext).removeRoute(ROUTE_ID_1);
-        verify(consumerManager).destroyPushConsumer(key1);
+        verify(consumerManager).destroyPullConsumer(key1);
     }
 
     @Test
@@ -277,7 +277,7 @@ class IoTDBRoutesRegistryTest {
         routesRegistry.removeRoutesAfterTopicDrop(new IoTDBTopicDropped(new Object(), TOPIC_1));
 
         verify(camelContext, never()).removeRoute(anyString());
-        verify(consumerManager, never()).destroyPushConsumer(any());
+        verify(consumerManager, never()).destroyPullConsumer(any());
     }
 
     @Test
@@ -376,6 +376,6 @@ class IoTDBRoutesRegistryTest {
 
         assertDoesNotThrow(() -> routesRegistry.removeStopped(ROUTE_ID_1));
         verify(camelContext).removeRoute(ROUTE_ID_1); // Ensure attempt
-        verify(consumerManager, never()).destroyPushConsumer(any(PushConsumerKey.class));
+        verify(consumerManager, never()).destroyPullConsumer(any(PullConsumerKey.class));
     }
 }

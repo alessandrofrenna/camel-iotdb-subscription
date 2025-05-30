@@ -37,7 +37,6 @@ import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.tsfile.write.record.Tablet;
 import org.apache.tsfile.write.schema.MeasurementSchema;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
@@ -80,6 +79,13 @@ public class IoTDBTestSupport extends CamelTestSupport {
 
         return context;
     }
+
+    //    @Override
+    //    @AfterEach
+    //    public void cleanupResources() {
+    //        context.stop();
+    //        context.shutdown();
+    //    }
 
     protected void createTopicQuietly(String topicName, String path) {
         try {
@@ -181,12 +187,5 @@ public class IoTDBTestSupport extends CamelTestSupport {
                 sessionCfg.user(),
                 sessionCfg.password(),
                 SessionConfig.DEFAULT_MAX_FRAME_SIZE);
-    }
-
-    @Override
-    @AfterEach
-    public void cleanupResources() {
-        context.stop();
-        context.shutdown();
     }
 }
