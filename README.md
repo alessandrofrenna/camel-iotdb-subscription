@@ -34,7 +34,7 @@ Add this to your dependencies:
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-iotdb-subscription</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
     </dependency>
 </dependencies>
 ```
@@ -48,14 +48,14 @@ If you want to use the `camel-test-infra-iotb` add this to your dependencies:
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
         <scope>test</scope>
     </dependency>
     
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.2-SNAPSHOT</version>
         <type>test-jar</type>
         <scope>test</scope>
     </dependency>
@@ -79,14 +79,14 @@ dependencyResolutionManagement {
 Add this to your dependencies in `build.gradle`:
 ```
 dependencies {
-        implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:1.0.1-SNAPSHOT'
+        implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:1.0.2-SNAPSHOT'
 }
 ```
 
 If you want to use the `camel-test-infra-iotb` add this to your dependencies:
 ```
 dependencies {
-        testImplementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-test-infra-iotdb:1.0.1-SNAPSHOT'
+        testImplementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-test-infra-iotdb:1.0.2-SNAPSHOT'
 }
 ```
 
