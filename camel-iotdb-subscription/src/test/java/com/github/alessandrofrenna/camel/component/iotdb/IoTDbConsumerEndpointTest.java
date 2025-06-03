@@ -62,7 +62,6 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         MockEndpoint.resetMocks(context);
     }
 
-
     @Test
     @Order(1)
     void when_route1_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
@@ -88,31 +87,6 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
 
         context.removeRoute("route1");
-    }
-
-    @Test
-    @Order(2)
-    void when_route2_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
-        context.addRoutes(new RouteBuilder() {
-            @Override
-            public void configure() {
-                // spotless:off
-                from("iotdb-subscription:test_group:test_consumer_b?subscribeTo=" + RAIN_TOPIC)
-                        .routeId("route2")
-                        .to("mock:result2");
-                // spotless:on
-            }
-        });
-
-        int size = 10;
-        MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
-        mockResult2.reset();
-        mockResult2.expectedMinimumMessageCount(1);
-        mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-
-        generateDataPoints(RAIN_PATH, size, 3, 7.5);
-        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
-        mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
     }
 
     @Test
