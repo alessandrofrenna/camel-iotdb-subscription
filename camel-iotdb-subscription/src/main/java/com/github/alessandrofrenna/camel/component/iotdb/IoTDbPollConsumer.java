@@ -17,7 +17,6 @@
 
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -163,13 +162,13 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
 
         LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topics);
         List<SubscriptionMessage> messages = pollMessages(endpoint.getPollTimeoutMs());
-        List<SubscriptionMessage> ackableMessages = processMessages(messages);
+        Set<SubscriptionMessage> ackableMessages = processMessages(messages);
         if (!ackableMessages.isEmpty()) {
             pullConsumer.commitSync(ackableMessages);
             LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
             return ackableMessages.size();
         }
-        return 0;
+        return messages.size();
     }
 
     private List<SubscriptionMessage> pollMessages(long pollTimeout) {
@@ -186,8 +185,8 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
         return messages;
     }
 
-    private List<SubscriptionMessage> processMessages(List<SubscriptionMessage> messages) {
-        List<SubscriptionMessage> ackableMessages = new ArrayList<>();
+    private Set<SubscriptionMessage> processMessages(List<SubscriptionMessage> messages) {
+        Set<SubscriptionMessage> ackableMessages = new CopyOnWriteArraySet<>();
         for (SubscriptionMessage message : messages) {
             if (processMessage(message)) {
                 ackableMessages.add(message);
@@ -214,8 +213,6 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
             LOG.error("Unexpected error processing the message", e);
             getExceptionHandler().handleException("Unexpected error processing IoTDB message", exchange, e);
             return false;
-        } finally {
-            releaseExchange(exchange, false);
         }
     }
 }
