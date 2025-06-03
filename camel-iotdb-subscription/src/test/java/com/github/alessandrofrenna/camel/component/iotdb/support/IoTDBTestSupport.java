@@ -42,8 +42,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration;
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSubscriptionComponent;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSessionConfiguration;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSubscriptionComponent;
 import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
 import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
 
@@ -65,7 +65,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         TestSupport.loadExternalPropertiesQuietly(properties, IoTDBTestSupport.class, TEST_OPTIONS_PROPERTIES);
     }
 
-    private IoTDBSessionConfiguration sessionCfg;
+    private IoTDbSessionConfiguration sessionCfg;
 
     @Override
     protected CamelContext createCamelContext() throws Exception {
@@ -73,19 +73,12 @@ public class IoTDBTestSupport extends CamelTestSupport {
 
         Map<String, Object> options = getIoTDBSessionCfgMap();
 
-        IoTDBSubscriptionComponent comp = new IoTDBSubscriptionComponent();
+        IoTDbSubscriptionComponent comp = new IoTDbSubscriptionComponent();
         PropertyBindingSupport.bindProperties(context, comp, options);
         context.addComponent("iotdb-subscription", comp);
 
         return context;
     }
-
-    //    @Override
-    //    @AfterEach
-    //    public void cleanupResources() {
-    //        context.stop();
-    //        context.shutdown();
-    //    }
 
     protected void createTopicQuietly(String topicName, String path) {
         try {
@@ -171,7 +164,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         options.put("host", service.host());
         options.put("port", service.port());
 
-        sessionCfg = new IoTDBSessionConfiguration(
+        sessionCfg = new IoTDbSessionConfiguration(
                 options.get("host").toString(),
                 (int) options.get("port"),
                 options.get("user").toString(),
