@@ -16,6 +16,10 @@
  */
 package com.github.alessandrofrenna.camel.component.iotdb.support;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +28,7 @@ import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.Exchange;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.apache.camel.test.junit5.TestSupport;
@@ -32,9 +37,11 @@ import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
 import org.apache.iotdb.rpc.subscription.config.TopicConstant;
 import org.apache.iotdb.session.subscription.SubscriptionSession;
+import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
+import org.apache.tsfile.read.common.RowRecord;
 import org.apache.tsfile.write.record.Tablet;
 import org.apache.tsfile.write.schema.MeasurementSchema;
 import org.junit.jupiter.api.TestInstance;
@@ -110,14 +117,10 @@ public class IoTDBTestSupport extends CamelTestSupport {
     }
 
     protected void dropTimeseriesPathQuietly(String timeSeriesPath) {
-        String path = timeSeriesPath.substring(0, timeSeriesPath.lastIndexOf("."));
         try {
             doInSession(session -> {
-                if (session.checkTimeseriesExists(timeSeriesPath)) {
-                    LOG.debug("Timeseries with path {} removed", timeSeriesPath);
-                    return;
-                }
-                session.deleteTimeseries(path);
+                session.deleteTimeseries(timeSeriesPath);
+                LOG.info("Timeseries with path {} removed", timeSeriesPath);
             });
         } catch (RuntimeException e) {
             LOG.error("Error deleting timeseries {}: {}", timeSeriesPath, e.getMessage());
@@ -160,6 +163,21 @@ public class IoTDBTestSupport extends CamelTestSupport {
         } catch (RuntimeException e) {
             LOG.warn("Error adding data point fot timeseries {}: {}", timeSeriesPath, e.getMessage());
         }
+    }
+
+    protected void assertFromExchange(Exchange exchange, String topicName, long timeseriesCount) {
+        SubscriptionMessage message = exchange.getIn().getBody(SubscriptionMessage.class);
+        assertNotNull(message);
+        assertEquals(topicName, message.getCommitContext().getTopicName());
+        var rowCount = 0;
+        for (var sessionDataSet : message.getSessionDataSetsHandler()) {
+            while (sessionDataSet.hasNext()) {
+                RowRecord rowRecord = sessionDataSet.next();
+                System.out.println(rowRecord);
+                rowCount++;
+            }
+        }
+        assertTrue(rowCount >= timeseriesCount);
     }
 
     public void doInSession(SessionFnConsumer sessionConsumer) {
