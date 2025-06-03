@@ -17,14 +17,10 @@
 
 package com.github.alessandrofrenna.camel.component.iotdb;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,7 +28,6 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.ScheduledPollConsumer;
-import org.apache.iotdb.rpc.subscription.config.ConsumerConstant;
 import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
 import org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
@@ -104,8 +99,7 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
                 .consumerGroupId(consumerCfg.consumerGroupId())
                 .consumerId(consumerCfg.consumerId())
                 .heartbeatIntervalMs(consumerCfg.heartbeatIntervalMs())
-                .autoCommit(true)
-                .autoCommitIntervalMs(ConsumerConstant.AUTO_COMMIT_INTERVAL_MS_DEFAULT_VALUE)
+                .autoCommit(false)
                 .maxPollParallelism(Runtime.getRuntime().availableProcessors() / 2)
                 .buildPullConsumer();
     }
@@ -169,9 +163,12 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
         LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topics);
         List<SubscriptionMessage> messages = pollMessages(endpoint.getPollTimeoutMs());
         List<SubscriptionMessage> ackableMessages = processMessages(messages);
-        pullConsumer.commitSync(ackableMessages);
-        LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
-        return ackableMessages.size();
+        if (!ackableMessages.isEmpty()) {
+            pullConsumer.commitSync(ackableMessages);
+            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
+            return ackableMessages.size();
+        }
+        return 0;
     }
 
     private List<SubscriptionMessage> pollMessages(long pollTimeout) {
@@ -189,16 +186,10 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     }
 
     private List<SubscriptionMessage> processMessages(List<SubscriptionMessage> messages) {
-        final var messagesByTopicName = messages.stream()
-                .collect(groupingBy(msg -> msg.getCommitContext().getTopicName(), TreeMap::new, toList()));
-
         List<SubscriptionMessage> ackableMessages = new ArrayList<>();
-        for (String topic : topics) {
-            List<SubscriptionMessage> topicMessages = messagesByTopicName.getOrDefault(topic, Collections.emptyList());
-            for (SubscriptionMessage message : messages) {
-                if (processMessage(message)) {
-                    ackableMessages.add(message);
-                }
+        for (SubscriptionMessage message : messages) {
+            if (processMessage(message)) {
+                ackableMessages.add(message);
             }
         }
         return ackableMessages;

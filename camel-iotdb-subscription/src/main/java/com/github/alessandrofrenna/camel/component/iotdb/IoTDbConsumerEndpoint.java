@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -135,7 +134,6 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
      */
     public void setSubscribeTo(String subscribeTo) {
         this.subscribeTo = subscribeTo;
-        Set<String> extractedTopics = new CopyOnWriteArraySet<>();
         if (internalSharedConsumer != null) {
             internalSharedConsumer.setTopics(new HashSet<>(Arrays.asList(subscribeTo.split(","))));
         }

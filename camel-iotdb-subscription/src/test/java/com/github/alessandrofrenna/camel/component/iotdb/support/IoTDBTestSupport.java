@@ -109,6 +109,21 @@ public class IoTDBTestSupport extends CamelTestSupport {
         }
     }
 
+    protected void dropTimeseriesPathQuietly(String timeSeriesPath) {
+        String path = timeSeriesPath.substring(0, timeSeriesPath.lastIndexOf("."));
+        try {
+            doInSession(session -> {
+                if (session.checkTimeseriesExists(timeSeriesPath)) {
+                    LOG.debug("Timeseries with path {} removed", timeSeriesPath);
+                    return;
+                }
+                session.deleteTimeseries(path);
+            });
+        } catch (RuntimeException e) {
+            LOG.error("Error deleting timeseries {}: {}", timeSeriesPath, e.getMessage());
+        }
+    }
+
     protected void generateDataPoints(String timeSeriesPath, int size, double min, double max) {
         final int lastDotIndex = timeSeriesPath.lastIndexOf(".");
         final String devicePath = timeSeriesPath.substring(0, lastDotIndex);
