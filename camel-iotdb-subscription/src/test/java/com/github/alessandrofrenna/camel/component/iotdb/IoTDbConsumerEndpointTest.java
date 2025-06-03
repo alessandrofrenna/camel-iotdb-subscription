@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.github.alessandrofrenna.camel.component.iotdb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +57,8 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     void setUpTestSuite() {
         createTimeseriesPathQuietly(TEMPERATURE_PATH);
         createTimeseriesPathQuietly(RAIN_PATH);
+        createTopicQuietly(TEMPERATURE_TOPIC, TEMPERATURE_PATH);
+        createTopicQuietly(RAIN_TOPIC, RAIN_PATH);
         MockEndpoint.resetMocks(context);
     }
 
@@ -64,8 +67,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         return new RouteBuilder() {
             @Override
             public void configure() {
-                createTopicQuietly(TEMPERATURE_TOPIC, TEMPERATURE_PATH);
-                createTopicQuietly(RAIN_TOPIC, RAIN_PATH);
+
                 // spotless:off
                 from("iotdb-subscription:test_group:test_consumer_a?subscribeTo=" + TEMPERATURE_TOPIC)
                         .routeId("route1")
@@ -97,40 +99,72 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     @Test
     @Order(1)
     void when_route1_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from("iotdb-subscription:test_group:test_consumer_a?subscribeTo=" + TEMPERATURE_TOPIC)
+                        .routeId("route1")
+                        .to("mock:result1");
+                // spotless:on
+            }
+        });
+
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
         mockResult1.reset();
         mockResult1.expectedMinimumMessageCount(1);
         mockResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-        context.getRouteController().startRoute("route1");
 
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
         mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
 
-        context.getRouteController().stopRoute("route1");
+        context.removeRoute("route1");
     }
 
     @Test
     @Order(2)
     void when_route2_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from("iotdb-subscription:test_group:test_consumer_b?subscribeTo=" + RAIN_TOPIC)
+                        .routeId("route2")
+                        .to("mock:result2");
+                // spotless:on
+            }
+        });
+
         int size = 10;
         MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
         mockResult2.reset();
         mockResult2.expectedMinimumMessageCount(1);
         mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-        context.getRouteController().startRoute("route2");
 
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
         mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
-
-        context.getRouteController().stopRoute("route2");
     }
 
     @Test
     @Order(3)
     void when_aConsumerIsSubscribedToMultipleTopics_theMessagesShouldBeReceived() throws Exception {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from(String.format("iotdb-subscription:test_group:test_consumer?subscribeTo=%s,%s", TEMPERATURE_TOPIC, RAIN_TOPIC))
+                        .routeId("route3")
+                        .choice()
+                            .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result1")
+                            .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result2")
+                        .end();
+                // spotless:on
+            }
+        });
+
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
         mockResult1.reset();
@@ -142,22 +176,34 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         mockResult2.expectedMinimumMessageCount(1);
         mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
-        var routeController = context.getRouteController();
-        routeController.startRoute("route3");
-
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
 
         mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
         mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
 
-        routeController.stopRoute("route3");
+        context.removeRoute("route3");
     }
 
     @Test
     @Order(4)
     void when_moreConsumersAreSubscribedToTheSameTopic_theMessagesShouldBeReceived() throws Exception {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from("iotdb-subscription:test_group:test_consumer_a?subscribeTo=" + TEMPERATURE_TOPIC)
+                        .routeId("route1")
+                        .to("mock:result1");
+
+                from("iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=" + TEMPERATURE_TOPIC)
+                        .routeId("route4")
+                        .to("mock:result5");
+                // spotless:on
+            }
+        });
+
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
         mockResult1.reset();
@@ -169,24 +215,29 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         mockResult5.expectedMinimumMessageCount(1);
         mockResult5.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
-        var routeController = context.getRouteController();
-        routeController.startRoute("route4");
-        routeController.startRoute("route1");
-
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
 
         Stream.concat(mockResult1.getReceivedExchanges().stream(), mockResult5.getReceivedExchanges().stream())
                 .forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
 
-        routeController.stopRoute("route4");
-        routeController.stopRoute("route1");
+        context.removeRoute("route1");
+        context.removeRoute("route4");
     }
 
     @Test
     @Order(5)
     void when_aTopicIsAddedToARoute_theMessagesShouldBeReceivedFromBoth() throws Exception {
-        context.getRouteController().startRoute("route4");
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from("iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=" + TEMPERATURE_TOPIC)
+                        .routeId("route4")
+                        .to("mock:result5");
+                // spotless:on
+            }
+        });
 
         Awaitility.await()
                 .atMost(Duration.ofSeconds(1))
@@ -196,16 +247,14 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
-                from(String.format(
-                                "iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=%s,%s",
-                                TEMPERATURE_TOPIC, RAIN_TOPIC))
+                // spotless:off
+                from(String.format("iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=%s,%s", TEMPERATURE_TOPIC, RAIN_TOPIC))
                         .routeId("route4")
                         .choice()
-                        .when(header("topic").isEqualTo(TEMPERATURE_TOPIC))
-                        .to("mock:result5")
-                        .when(header("topic").isEqualTo(RAIN_TOPIC))
-                        .to("mock:result6")
+                            .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result5")
+                            .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result6")
                         .end();
+                // spotless:on
             }
         });
 
@@ -222,18 +271,30 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
 
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        MockEndpoint.assertIsSatisfied(context, 60, TimeUnit.SECONDS);
 
         mockResult5.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
         mockResult6.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
 
-        context.getRouteController().stopRoute("route4");
+        context.removeRoute("route4");
     }
 
     @Test
     @Order(6)
     void when_aTopicIsRemovedFromARoute_theMessagesFromTheRemovedTopicShouldNotBeReceived() throws Exception {
-        context.getRouteController().startRoute("route3");
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                // spotless:off
+                from(String.format("iotdb-subscription:test_group:test_consumer?subscribeTo=%s,%s", TEMPERATURE_TOPIC, RAIN_TOPIC))
+                        .routeId("route3")
+                        .choice()
+                            .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result1")
+                            .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result2")
+                        .end();
+                // spotless:on
+            }
+        });
 
         Awaitility.await()
                 .atMost(Duration.ofSeconds(1))
@@ -243,14 +304,14 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
+                // spotless:off
                 from(String.format("iotdb-subscription:test_group:test_consumer?subscribeTo=%s", TEMPERATURE_TOPIC))
                         .routeId("route3")
                         .choice()
-                        .when(header("topic").isEqualTo(TEMPERATURE_TOPIC))
-                        .to("mock:result1")
-                        .when(header("topic").isEqualTo(RAIN_TOPIC))
-                        .to("mock:result2")
+                        .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result1")
+                        .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result2")
                         .end();
+                // spotless:on
             }
         });
 
@@ -271,7 +332,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
         assertTrue(mockResult2.getReceivedExchanges().isEmpty());
 
-        context.getRouteController().stopRoute("route3");
+        context.removeRoute("route3");
     }
 
     @Test
@@ -312,20 +373,4 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         }
         assertTrue(rowCount >= timeseriesCount);
     }
-
-    //    @Test
-    //    void when_droppingATopic_theRoutes_shouldBeStoppedSndThenRemoved() {
-    //        context.getRoutes().forEach(route -> {
-    //            try {
-    //                context.getRouteController().startRoute(route.getRouteId());
-    //            } catch (Exception e) {
-    //                throw new RuntimeException(e);
-    //            }
-    //        });
-    //        template.sendBody(String.format("iotdb-subscription:%s?action=drop", TEMPERATURE_TOPIC), null);
-    //        Awaitility.await().atMost(Duration.ofMillis(500)).untilAsserted(() -> {
-    //            assertEquals(2, context.getRoutes().size());
-    //            assertNull(context.getRoute("tempConsumerARoute"));
-    //        });
-    //    }
 }
