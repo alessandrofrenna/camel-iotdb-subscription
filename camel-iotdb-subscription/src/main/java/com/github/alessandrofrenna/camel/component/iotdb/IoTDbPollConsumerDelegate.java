@@ -28,6 +28,11 @@ class IoTDbPollConsumerDelegate extends DefaultConsumer {
     }
 
     @Override
+    protected void doStart() {
+        wrappedConsumer.start();
+    }
+
+    @Override
     protected void doStop() throws Exception {
         wrappedConsumer.close();
     }
