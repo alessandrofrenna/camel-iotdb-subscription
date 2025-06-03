@@ -29,14 +29,15 @@ import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.ScheduledPollConsumer;
 import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
-import org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer;
+import org.apache.iotdb.session.subscription.consumer.ISubscriptionTreePullConsumer;
+import org.apache.iotdb.session.subscription.consumer.tree.SubscriptionTreePullConsumerBuilder;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The <b>IoTDbTopicPollConsumer</b> extends the camel {@link ScheduledPollConsumer}. <br> It is used to create a
- * {@link SubscriptionPullConsumer} used to get messages from an IoTDb topics after subscription.<br>
+ * {@link ISubscriptionTreePullConsumer} used to get messages from an IoTDb topics after subscription.<br>
  */
 class IoTDbPollConsumer extends ScheduledPollConsumer {
     private static final String TOPIC_HEADER_NAME = "topic";
@@ -44,7 +45,7 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     private final IoTDbConsumerEndpoint endpoint;
     private final Set<String> topics = new CopyOnWriteArraySet<>();
     private final ReentrantLock defaultLock = new ReentrantLock();
-    private SubscriptionPullConsumer pullConsumer;
+    private ISubscriptionTreePullConsumer pullConsumer;
 
     /**
      * Create an <b>IoTDbTopicPollConsumer</b> instance.
@@ -57,7 +58,7 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     }
 
     /**
-     * Return a copy of the topics {@link SubscriptionPullConsumer} is subscribed to.
+     * Return a copy of the topics {@link ISubscriptionTreePullConsumer} is subscribed to.
      *
      * @return a set of topics
      */
@@ -89,9 +90,9 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
         this.topics.addAll(topics);
     }
 
-    protected SubscriptionPullConsumer createPullConsumer(
+    protected ISubscriptionTreePullConsumer createPullConsumer(
             IoTDbSessionConfiguration sessionCfg, IoTDbConsumerConfiguration consumerCfg) {
-        return new SubscriptionPullConsumer.Builder()
+        return new SubscriptionTreePullConsumerBuilder()
                 .host(sessionCfg.host())
                 .port(sessionCfg.port())
                 .username(sessionCfg.user())

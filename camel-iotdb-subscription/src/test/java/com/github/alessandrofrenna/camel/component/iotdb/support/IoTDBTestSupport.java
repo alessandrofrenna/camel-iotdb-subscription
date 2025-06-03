@@ -32,17 +32,18 @@ import org.apache.camel.Exchange;
 import org.apache.camel.support.PropertyBindingSupport;
 import org.apache.camel.test.junit5.CamelTestSupport;
 import org.apache.camel.test.junit5.TestSupport;
-import org.apache.iotdb.isession.SessionConfig;
-import org.apache.iotdb.rpc.IoTDBConnectionException;
-import org.apache.iotdb.rpc.StatementExecutionException;
+import org.apache.iotdb.isession.ISession;
 import org.apache.iotdb.rpc.subscription.config.TopicConstant;
-import org.apache.iotdb.session.subscription.SubscriptionSession;
+import org.apache.iotdb.session.Session;
+import org.apache.iotdb.session.subscription.ISubscriptionTreeSession;
+import org.apache.iotdb.session.subscription.SubscriptionTreeSessionBuilder;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 import org.apache.tsfile.enums.TSDataType;
 import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.tsfile.read.common.RowRecord;
 import org.apache.tsfile.write.record.Tablet;
+import org.apache.tsfile.write.schema.IMeasurementSchema;
 import org.apache.tsfile.write.schema.MeasurementSchema;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -89,7 +90,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
 
     protected void createTopicQuietly(String topicName, String path) {
         try {
-            doInSession(session -> {
+            doInSubscriptionSession((ISubscriptionTreeSession session) -> {
                 Properties props = new Properties();
                 props.setProperty(TopicConstant.PATH_KEY, path);
                 props.setProperty(TopicConstant.FORMAT_KEY, TopicConstant.FORMAT_SESSION_DATA_SETS_HANDLER_VALUE);
@@ -103,7 +104,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
 
     protected void createTimeseriesPathQuietly(String timeSeriesPath) {
         try {
-            doInSession(session -> {
+            doInSession((ISession session) -> {
                 if (session.checkTimeseriesExists(timeSeriesPath)) {
                     LOG.debug("Timeseries with path {} already exists", timeSeriesPath);
                     return;
@@ -132,31 +133,31 @@ public class IoTDBTestSupport extends CamelTestSupport {
         final String devicePath = timeSeriesPath.substring(0, lastDotIndex);
         final String measureVariable = timeSeriesPath.substring(lastDotIndex + 1);
 
-        List<MeasurementSchema> schemaList = new ArrayList<>();
+        List<IMeasurementSchema> schemaList = new ArrayList<>();
         schemaList.add(new MeasurementSchema(measureVariable, TSDataType.DOUBLE));
         Tablet tablet = new Tablet(devicePath, schemaList, size);
 
         long timestamp = System.currentTimeMillis();
         for (int i = 0; i < size; i++) {
-            int rowIndex = tablet.rowSize++;
+            int rowIndex = tablet.getRowSize();
             tablet.addTimestamp(rowIndex, timestamp++);
             double value = min;
             if (min < max) {
                 value = ThreadLocalRandom.current().nextDouble(min, max == Double.MAX_VALUE ? max : Math.nextUp(max));
             }
-            tablet.addValue(schemaList.get(0).getMeasurementId(), rowIndex, value);
+            tablet.addValue(schemaList.get(0).getMeasurementName(), rowIndex, value);
         }
 
         try {
             doInSession(session -> {
-                if (tablet.rowSize != 0) {
+                if (tablet.getRowSize() != 0) {
                     session.insertTablet(tablet);
                     LOG.info(
                             "Added {} data points for {} {}: {}",
-                            tablet.rowSize,
+                            tablet.getRowSize(),
                             devicePath,
                             tablet.getSchemas(),
-                            tablet.values);
+                            tablet.getValues());
                 }
                 tablet.reset();
             });
@@ -181,10 +182,19 @@ public class IoTDBTestSupport extends CamelTestSupport {
     }
 
     public void doInSession(SessionFnConsumer sessionConsumer) {
-        try (SubscriptionSession session = getSubscriptionSession()) {
+        try (ISession session = getSession()) {
             session.open();
             sessionConsumer.accept(session);
-        } catch (IoTDBConnectionException | StatementExecutionException e) {
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void doInSubscriptionSession(SubscriptionSessionFnConsumer sessionConsumer) {
+        try (ISubscriptionTreeSession session = getSubscriptionSession()) {
+            session.open();
+            sessionConsumer.accept(session);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -206,12 +216,21 @@ public class IoTDBTestSupport extends CamelTestSupport {
         return options;
     }
 
-    private SubscriptionSession getSubscriptionSession() {
-        return new SubscriptionSession(
-                sessionCfg.host(),
-                sessionCfg.port(),
-                sessionCfg.user(),
-                sessionCfg.password(),
-                SessionConfig.DEFAULT_MAX_FRAME_SIZE);
+    private ISubscriptionTreeSession getSubscriptionSession() {
+        return new SubscriptionTreeSessionBuilder()
+                .host(sessionCfg.host())
+                .port(sessionCfg.port())
+                .username(sessionCfg.user())
+                .password(sessionCfg.password())
+                .build();
+    }
+
+    private ISession getSession() {
+        return new Session.Builder()
+                .host(sessionCfg.host())
+                .port(sessionCfg.port())
+                .username(sessionCfg.user())
+                .password(sessionCfg.password())
+                .build();
     }
 }

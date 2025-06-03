@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.github.alessandrofrenna.camel.component.iotdb.support;
 
-import org.apache.iotdb.isession.ISession;
 import org.apache.iotdb.rpc.IoTDBConnectionException;
 import org.apache.iotdb.rpc.StatementExecutionException;
+import org.apache.iotdb.session.subscription.ISubscriptionTreeSession;
 
 @FunctionalInterface
-public interface SessionFnConsumer {
-    void accept(ISession session) throws IoTDBConnectionException, StatementExecutionException;
+public interface SubscriptionSessionFnConsumer {
+    void accept(ISubscriptionTreeSession session) throws IoTDBConnectionException, StatementExecutionException;
 }
