@@ -62,39 +62,6 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         MockEndpoint.resetMocks(context);
     }
 
-    @Override
-    protected RouteBuilder createRouteBuilder() {
-        return new RouteBuilder() {
-            @Override
-            public void configure() {
-
-                // spotless:off
-                from("iotdb-subscription:test_group:test_consumer_a?subscribeTo=" + TEMPERATURE_TOPIC)
-                        .routeId("route1")
-                        .to("mock:result1")
-                        .autoStartup(false);
-
-                from("iotdb-subscription:test_group:test_consumer_b?subscribeTo=" + RAIN_TOPIC)
-                        .routeId("route2")
-                        .to("mock:result2")
-                        .autoStartup(false);
-
-                from(String.format("iotdb-subscription:test_group:test_consumer?subscribeTo=%s,%s", TEMPERATURE_TOPIC, RAIN_TOPIC))
-                        .routeId("route3")
-                        .autoStartup(false)
-                        .choice()
-                            .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result1")
-                            .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result2")
-                        .end();
-
-                from("iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=" + TEMPERATURE_TOPIC)
-                        .routeId("route4")
-                        .to("mock:result5")
-                        .autoStartup(false);
-                // spotless:on
-            }
-        };
-    }
 
     @Test
     @Order(1)
