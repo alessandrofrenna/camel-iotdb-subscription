@@ -16,7 +16,7 @@
  */
 package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.*;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.*;
 
 import java.util.Optional;
 
@@ -26,43 +26,45 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * The <b>IoTDBContainer</b> class extends {@link GenericContainer class}.<br>
+ * The <b>IoTDbContainer</b> class extends {@link GenericContainer class}.<br>
  * It defines the controller that will be created and launched.
  */
-public class IoTDBContainer extends GenericContainer<IoTDBContainer> {
-
+public class IoTDbContainer extends GenericContainer<IoTDbContainer> {
+    /**
+     * The default container name.
+     */
     public static final String CONTAINER_NAME = "iotdb";
 
     /**
-     * Default <b>IoTDBContainer</b> constructor.
+     * Default <b>IoTDbContainer</b> constructor.
      */
-    public IoTDBContainer() {
-        super(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_CONTAINER));
-        int port = Optional.of(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_PORT))
+    public IoTDbContainer() {
+        super(LocalPropertyResolver.getProperty(IoTDbLocalContainerInfrastructure.class, IOTDB_CONTAINER));
+        int port = Optional.of(LocalPropertyResolver.getProperty(IoTDbLocalContainerInfrastructure.class, IOTDB_PORT))
                 .map(Integer::parseInt)
                 .orElse(DEFAULT_PORT);
         this.withNetworkAliases(CONTAINER_NAME).withExposedPorts(port).waitingFor(Wait.forListeningPort());
     }
 
     /**
-     * Create a <b>IoTDBContainer</b> using its name.
+     * Create a <b>IoTDbContainer</b> using its name.
      * @param imageName of iotdb
      */
-    public IoTDBContainer(String imageName) {
+    public IoTDbContainer(String imageName) {
         super(DockerImageName.parse(imageName));
     }
 
     /**
-     * Initialize a <b>IoTDBContainer</b> using its name and network aliases.
+     * Initialize a <b>IoTDbContainer</b> using its name and network aliases.
      * @param imageName of iotdb
      * @param networkAlias to use with the container
      * @return an instance of the container object
      */
-    public static IoTDBContainer initContainer(String imageName, String networkAlias) {
-        int port = Optional.of(LocalPropertyResolver.getProperty(IoTDBLocalContainerInfrastructure.class, IOTDB_PORT))
+    public static IoTDbContainer initContainer(String imageName, String networkAlias) {
+        int port = Optional.of(LocalPropertyResolver.getProperty(IoTDbLocalContainerInfrastructure.class, IOTDB_PORT))
                 .map(Integer::parseInt)
                 .orElse(DEFAULT_PORT);
-        return new IoTDBContainer(imageName)
+        return new IoTDbContainer(imageName)
                 .withNetworkAliases(networkAlias)
                 .withExposedPorts(port)
                 .waitingFor(Wait.forListeningPort());

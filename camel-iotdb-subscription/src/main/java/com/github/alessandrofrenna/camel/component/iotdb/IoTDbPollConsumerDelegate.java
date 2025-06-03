@@ -15,14 +15,25 @@
  * limitations under the License.
  */
 
-package com.github.alessandrofrenna.camel.component.iotdb.event;
+package com.github.alessandrofrenna.camel.component.iotdb;
 
-/**
- * The <b>IoTDBResumeAllTopicConsumers</b> is concreate event that extends {@link AbstractIoTDBComponentEvent}.<br> The
- * event is published by an IotDBTopicProducer when processed and action=drop, and the drop fails.
- */
-public class IoTDBResumeAllTopicConsumers extends AbstractIoTDBComponentEvent {
-    public IoTDBResumeAllTopicConsumers(Object source, String topicName) {
-        super(source, topicName);
+import org.apache.camel.support.DefaultConsumer;
+
+class IoTDbPollConsumerDelegate extends DefaultConsumer {
+    private final IoTDbPollConsumer wrappedConsumer;
+
+    IoTDbPollConsumerDelegate(IoTDbPollConsumer wrappedConsumer) {
+        super(wrappedConsumer.getEndpoint(), wrappedConsumer.getProcessor());
+        this.wrappedConsumer = wrappedConsumer;
+    }
+
+    @Override
+    protected void doStart() {
+        wrappedConsumer.start();
+    }
+
+    @Override
+    protected void doStop() throws Exception {
+        wrappedConsumer.close();
     }
 }

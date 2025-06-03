@@ -19,19 +19,19 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 import org.apache.camel.test.infra.common.services.InfrastructureService;
 
 /**
- * The <b>IoTDBInfraService</b> interface extends {@link InfrastructureService}.<br>
+ * The <b>IoTDbInfraService</b> interface extends {@link InfrastructureService}.<br>
  * This interface defines the properties exposed by the infrastructural service.<br>
  * Its default implementations are:
  * <ul>
- *     <li>{@link IoTDBLocalContainerInfrastructure}</li>
- *     <li>{@link IoTDBRemoteContainerInfraService}</li>
+ *     <li>{@link IoTDbLocalContainerInfrastructure}</li>
+ *     <li>{@link IoTDbRemoteContainerInfraService}</li>
  * </ul>
  *
  * You can configure the container properties inside an <b>iotdb.properties</b> file.<br>
- * By default, an instance of {@link IoTDBLocalContainerInfrastructure} will be created.
- * Add the proper property in the configuration to obtain an instance of {@link IoTDBRemoteContainerInfraService} instead.
+ * By default, an instance of {@link IoTDbLocalContainerInfrastructure} will be created.
+ * Add the proper property in the configuration to obtain an instance of {@link IoTDbRemoteContainerInfraService} instead.
  */
-public interface IoTDBInfraService extends InfrastructureService {
+public interface IoTDbInfraService extends InfrastructureService {
 
     /**
      * Get the hostname used by the running container instance.

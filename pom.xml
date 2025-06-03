@@ -3,7 +3,7 @@
 
     <groupId>com.github.alessandrofrenna</groupId>
     <artifactId>camel-iotdb-subscription-parent</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>0.0.1</version>
     <url>https://github.com/alessandrofrenna/camel-iotdb-subscription</url>
 
     <packaging>pom</packaging>
@@ -225,6 +225,7 @@
                 <version>${spotless-maven-plugin.version}</version>
                 <configuration>
                     <java>
+                        <toggleOffOn />
                         <includes>
                             <include>**/main/java/**/*.java</include>
                             <include>**/test/java/**/*.java</include>

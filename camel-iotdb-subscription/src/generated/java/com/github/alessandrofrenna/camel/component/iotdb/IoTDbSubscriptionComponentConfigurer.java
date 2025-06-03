@@ -17,11 +17,11 @@ import org.apache.camel.support.component.PropertyConfigurerSupport;
  */
 @Generated("org.apache.camel.maven.packaging.EndpointSchemaGeneratorMojo")
 @SuppressWarnings("unchecked")
-public class IoTDBSubscriptionComponentConfigurer extends PropertyConfigurerSupport implements GeneratedPropertyConfigurer, PropertyConfigurerGetter {
+public class IoTDbSubscriptionComponentConfigurer extends PropertyConfigurerSupport implements GeneratedPropertyConfigurer, PropertyConfigurerGetter {
 
     @Override
     public boolean configure(CamelContext camelContext, Object obj, String name, Object value, boolean ignoreCase) {
-        IoTDBSubscriptionComponent target = (IoTDBSubscriptionComponent) obj;
+        IoTDbSubscriptionComponent target = (IoTDbSubscriptionComponent) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "autowiredenabled":
         case "autowiredEnabled": target.setAutowiredEnabled(property(camelContext, boolean.class, value)); return true;
@@ -64,7 +64,7 @@ public class IoTDBSubscriptionComponentConfigurer extends PropertyConfigurerSupp
 
     @Override
     public Object getOptionValue(Object obj, String name, boolean ignoreCase) {
-        IoTDBSubscriptionComponent target = (IoTDBSubscriptionComponent) obj;
+        IoTDbSubscriptionComponent target = (IoTDbSubscriptionComponent) obj;
         switch (ignoreCase ? name.toLowerCase() : name) {
         case "autowiredenabled":
         case "autowiredEnabled": return target.isAutowiredEnabled();

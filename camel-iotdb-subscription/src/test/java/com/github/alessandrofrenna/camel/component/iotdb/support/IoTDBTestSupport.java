@@ -37,23 +37,22 @@ import org.apache.tsfile.file.metadata.enums.CompressionType;
 import org.apache.tsfile.file.metadata.enums.TSEncoding;
 import org.apache.tsfile.write.record.Tablet;
 import org.apache.tsfile.write.schema.MeasurementSchema;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSessionConfiguration;
-import com.github.alessandrofrenna.camel.component.iotdb.IoTDBSubscriptionComponent;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSessionConfiguration;
+import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSubscriptionComponent;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDbService;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDbServiceFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IoTDBTestSupport extends CamelTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(IoTDBTestSupport.class);
 
     @RegisterExtension
-    public static IoTDBService service = IoTDBServiceFactory.createService();
+    public static IoTDbService service = IoTDbServiceFactory.createService();
 
     private static final Properties properties = new Properties();
     private static final String TEST_OPTIONS_PROPERTIES = "/iotdb.properties";
@@ -66,7 +65,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         TestSupport.loadExternalPropertiesQuietly(properties, IoTDBTestSupport.class, TEST_OPTIONS_PROPERTIES);
     }
 
-    private IoTDBSessionConfiguration sessionCfg;
+    private IoTDbSessionConfiguration sessionCfg;
 
     @Override
     protected CamelContext createCamelContext() throws Exception {
@@ -74,7 +73,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
 
         Map<String, Object> options = getIoTDBSessionCfgMap();
 
-        IoTDBSubscriptionComponent comp = new IoTDBSubscriptionComponent();
+        IoTDbSubscriptionComponent comp = new IoTDbSubscriptionComponent();
         PropertyBindingSupport.bindProperties(context, comp, options);
         context.addComponent("iotdb-subscription", comp);
 
@@ -165,7 +164,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
         options.put("host", service.host());
         options.put("port", service.port());
 
-        sessionCfg = new IoTDBSessionConfiguration(
+        sessionCfg = new IoTDbSessionConfiguration(
                 options.get("host").toString(),
                 (int) options.get("port"),
                 options.get("user").toString(),
@@ -181,12 +180,5 @@ public class IoTDBTestSupport extends CamelTestSupport {
                 sessionCfg.user(),
                 sessionCfg.password(),
                 SessionConfig.DEFAULT_MAX_FRAME_SIZE);
-    }
-
-    @Override
-    @AfterEach
-    public void cleanupResources() {
-        context.stop();
-        context.shutdown();
     }
 }

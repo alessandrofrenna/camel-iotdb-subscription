@@ -19,36 +19,36 @@ package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 import org.apache.camel.test.infra.common.services.SimpleTestServiceBuilder;
 
 /**
- * The <b>IoTDBServiceFactory</b> will create, or utilize a running instance, of an iotdb server container.<br>
+ * The <b>IoTDbServiceFactory</b> will create, or utilize a running instance, of an iotdb server container.<br>
  * Its purpose is to be utilized inside a camel component integration tests.
  */
-public class IoTDBServiceFactory {
+public class IoTDbServiceFactory {
 
     /**
      * Default constructor
      */
-    private IoTDBServiceFactory() {}
+    private IoTDbServiceFactory() {}
 
     /**
      * Create and return {@link SimpleTestServiceBuilder} instance for iotdb.
      * @return a test service builder instance
      */
-    public static SimpleTestServiceBuilder<IoTDBService> builder() {
+    public static SimpleTestServiceBuilder<IoTDbService> builder() {
         return new SimpleTestServiceBuilder<>("iotdb");
     }
 
     /**
-     * Crete an instance of {@link IoTDBService}.<br>
+     * Crete an instance of {@link IoTDbService}.<br>
      * @return a local or a remote service
      */
-    public static IoTDBService createService() {
+    public static IoTDbService createService() {
         return builder()
-                .addLocalMapping(IoTDBLocalContainerService::new)
-                .addRemoteMapping(IoTDBRemoteContainerService::new)
+                .addLocalMapping(IoTDbLocalContainerService::new)
+                .addRemoteMapping(IoTDbRemoteContainerService::new)
                 .build();
     }
 
-    public static class IoTDBRemoteContainerService extends IoTDBRemoteContainerInfraService implements IoTDBService {}
+    public static class IoTDbRemoteContainerService extends IoTDbRemoteContainerInfraService implements IoTDbService {}
 
-    public static class IoTDBLocalContainerService extends IoTDBLocalContainerInfrastructure implements IoTDBService {}
+    public static class IoTDbLocalContainerService extends IoTDbLocalContainerInfrastructure implements IoTDbService {}
 }
