@@ -19,7 +19,7 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 import java.util.Objects;
 
 /**
- * Configuration record needed to create an instance of a {@link org.apache.iotdb.session.subscription.consumer.SubscriptionPullConsumer}
+ * Configuration record needed to create an instance of a {@link org.apache.iotdb.session.subscription.consumer.ISubscriptionTreePullConsumer}
  *
  * @param consumerGroupId is the group id
  * @param consumerId is the id of the consumer
