@@ -62,16 +62,20 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     }
 
     /**
+     * Return a copy of the topics {@link SubscriptionPullConsumer} is subscribed to.
+     *
+     * @return a set of topics
+     */
+    public Set<String> getTopics() {
+        return Set.copyOf(topics);
+    }
+
+    /**
      * Set the topics subject of the subscription.
      *
      * @param topics to subscribe to
      */
     public void setTopics(Set<String> topics) {
-        if (isStopping() || isStopped()) {
-            LOG.warn("The consumer is stopping, setTopics won't do anything");
-            return;
-        }
-
         defaultLock.lock();
         try {
             if (isStarted() && pullConsumer != null) {
@@ -138,10 +142,6 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
 
     @Override
     protected void doStop() throws Exception {
-        if (isStoppingOrStopped() || isShutdown()) {
-            return;
-        }
-
         if (pullConsumer == null) {
             super.doStop();
             return;
@@ -176,7 +176,7 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
 
     private List<SubscriptionMessage> pollMessages(long pollTimeout) {
         List<SubscriptionMessage> messages = Collections.emptyList();
-        lock.lock();
+        defaultLock.lock();
         try {
             messages = pullConsumer.poll(pollTimeout);
         } catch (SubscriptionException e) {
