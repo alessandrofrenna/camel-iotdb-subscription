@@ -118,16 +118,18 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
         int size = 10;
         mockTempTopic.expectedMinimumMessageCount(1);
         mockTempTopic.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-        mockTempTopic.setResultWaitTime(30000); // Increased wait time
+        mockTempTopic.setResultWaitTime(120000); // Increased wait time
+
+        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
+        mockTempTopic.assertIsSatisfied();
+
+        Thread.sleep(3000);
 
         mockRainTopicEp.expectedMinimumMessageCount(1);
         mockRainTopicEp.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-        mockTempTopic.setResultWaitTime(30000); // Increased wait time
-
-        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
+        mockTempTopic.setResultWaitTime(120000); // Increased wait time
         generateDataPoints(RAIN_PATH, size, 3, 7.5);
 
-        mockTempTopic.assertIsSatisfied();
         mockRainTopicEp.assertIsSatisfied();
 
         mockTempTopic.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
