@@ -49,6 +49,9 @@ public class IoTDbSubscriptionComponent extends HealthCheckComponent {
     @Metadata(title = "IoTDB password", required = true, secret = true, defaultValue = DEFAULT_PASSWORD)
     private String password;
 
+    /**
+     * Create an {@link IoTDbSubscriptionComponent} instance
+     */
     public IoTDbSubscriptionComponent() {}
 
     /**
