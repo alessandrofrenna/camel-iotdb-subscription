@@ -33,13 +33,17 @@ import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
 import org.apache.tsfile.read.common.RowRecord;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
 
 @TestInstance(TestInstance.Lifecycle.PER_METHOD)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     private final String TEMPERATURE_PATH = "root.test.demo_device_1.sensor_1.temperature";
     private final String RAIN_PATH = "root.test.demo_device_1.sensor_2.rain";
@@ -91,6 +95,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(1)
     void when_route1_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
@@ -107,6 +112,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(2)
     void when_route2_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
         int size = 10;
         MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
@@ -123,6 +129,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(3)
     void when_aConsumerIsSubscribedToMultipleTopics_theMessagesShouldBeReceived() throws Exception {
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
@@ -149,6 +156,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(4)
     void when_moreConsumersAreSubscribedToTheSameTopic_theMessagesShouldBeReceived() throws Exception {
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
@@ -176,6 +184,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(5)
     void when_aTopicIsAddedToARoute_theMessagesShouldBeReceivedFromBoth() throws Exception {
         context.getRouteController().startRoute("route4");
 
@@ -222,6 +231,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(6)
     void when_aTopicIsRemovedFromARoute_theMessagesFromTheRemovedTopicShouldNotBeReceived() throws Exception {
         context.getRouteController().startRoute("route3");
 
@@ -265,6 +275,7 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     }
 
     @Test
+    @Order(7)
     void when_subscribingToAMissingTopic_theRouteShouldBeStopped_afterThrow() {
         String MISSING_TOPIC_ROUTE_ID = "routeOfMissingTopic";
         assertNull(context().getRoute(MISSING_TOPIC_ROUTE_ID));
