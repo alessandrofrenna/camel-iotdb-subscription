@@ -16,15 +16,15 @@
  */
 package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.DEFAULT_PORT;
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_HOST;
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_PORT;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.DEFAULT_PORT;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.IOTDB_HOST;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.IOTDB_PORT;
 
 /**
- * The <b>IoTDBRemoteContainerInfraService</b> implements {@link IoTDBInfraService} and represents an instance of a remote container instance.<br>
+ * The <b>IoTDbRemoteContainerInfraService</b> implements {@link IoTDbInfraService} and represents an instance of a remote container instance.<br>
  * It allows to use a remote/local running instance of the iotdb server.
  */
-public class IoTDBRemoteContainerInfraService implements IoTDBInfraService {
+public class IoTDbRemoteContainerInfraService implements IoTDbInfraService {
 
     /**
      * {@inheritDoc}

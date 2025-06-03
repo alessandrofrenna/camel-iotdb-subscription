@@ -18,11 +18,16 @@ package com.github.alessandrofrenna.camel.component.iotdb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.camel.Exchange;
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
@@ -30,6 +35,7 @@ import org.apache.tsfile.read.common.RowRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import com.github.alessandrofrenna.camel.component.iotdb.support.IoTDBTestSupport;
 
@@ -55,115 +61,158 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
             public void configure() {
                 createTopicQuietly(TEMPERATURE_TOPIC, TEMPERATURE_PATH);
                 createTopicQuietly(RAIN_TOPIC, RAIN_PATH);
-
+                // spotless:off
                 from("iotdb-subscription:test_group:test_consumer_a?subscribeTo=" + TEMPERATURE_TOPIC)
-                        .to("mock:result1");
+                        .routeId("route1")
+                        .to("mock:result1")
+                        .autoStartup(false);
 
-                from("iotdb-subscription:test_group:test_consumer_b?subscribeTo="+RAIN_TOPIC)
-                        .to("mock:result2");
+                from("iotdb-subscription:test_group:test_consumer_b?subscribeTo=" + RAIN_TOPIC)
+                        .routeId("route2")
+                        .to("mock:result2")
+                        .autoStartup(false);
 
-                //                from(String.format(
-                //                                "iotdb-subscription:test_group:test_consumer?subscribeTo=%s,%s",
-                //                                TEMPERATURE_TOPIC, RAIN_PATH))
-                //                        .choice()
-                //                        .when(header("topic").isEqualTo(TEMPERATURE_PATH))
-                //                        .to("mock:result1")
-                //                        .when(header("topic").isEqualTo(RAIN_PATH))
-                //                        .to("mock:result2")
-                //                        .end();
+                from(String.format("iotdb-subscription:test_group:test_consumer?subscribeTo=%s,%s", TEMPERATURE_TOPIC, RAIN_TOPIC))
+                        .routeId("route3")
+                        .autoStartup(false)
+                        .choice()
+                            .when(header("topic").isEqualTo(TEMPERATURE_TOPIC)).to("mock:result3")
+                            .when(header("topic").isEqualTo(RAIN_TOPIC)).to("mock:result4")
+                        .end();
+
+                from("iotdb-subscription:test_group_2:test_consumer_a2?subscribeTo=" + TEMPERATURE_TOPIC)
+                        .routeId("route4")
+                        .to("mock:result5")
+                        .autoStartup(false);
+                // spotless:on
             }
         };
     }
 
     @Test
-    void when_tempConsumerARoute_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
+    void when_route1_isStarted_shouldReceiveMessagesFromTempTopic() throws Exception {
+        int size = 10;
+        MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
+        mockResult1.reset();
+        mockResult1.expectedMinimumMessageCount(1);
+        mockResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+        context.getRouteController().startRoute("route1");
+
+        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
+        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
+
+        context.getRouteController().stopRoute("route1");
+    }
+
+    @Test
+    void when_route2_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
+        int size = 10;
+        MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
+        mockResult2.reset();
+        mockResult2.expectedMinimumMessageCount(1);
+        mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+        context.getRouteController().startRoute("route2");
+
+        generateDataPoints(RAIN_PATH, size, 3, 7.5);
+        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+        mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
+
+        context.getRouteController().stopRoute("route2");
+    }
+
+    @Test
+    void when_aConsumerIsSubscribedToMultipleTopics_theMessagesShouldBeRoutedCorrectly() throws Exception {
+        int size = 10;
+        MockEndpoint mockResult3 = getMockEndpoint("mock:result3");
+        mockResult3.reset();
+        mockResult3.expectedMinimumMessageCount(1);
+        mockResult3.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+
+        MockEndpoint mockResult4 = getMockEndpoint("mock:result4");
+        mockResult4.reset();
+        mockResult4.expectedMinimumMessageCount(1);
+        mockResult4.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+
+        var routeController = context.getRouteController();
+        routeController.startRoute("route3");
+
+        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
+        generateDataPoints(RAIN_PATH, size, 3, 7.5);
+        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
+
+        mockResult3.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
+        mockResult4.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
+
+        routeController.stopRoute("route3");
+    }
+
+    @Test
+    void when_moreConsumersAreSubscribedToTheSameTopic_theMessagesShouldBeRoutedCorrectly() throws Exception {
         int size = 10;
         MockEndpoint mockResult1 = getMockEndpoint("mock:result1");
         mockResult1.reset();
         mockResult1.expectedMinimumMessageCount(1);
         mockResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
 
-        // context.getRouteController().startRoute("tempConsumerARoute");
+        MockEndpoint mockResult5 = getMockEndpoint("mock:result5");
+        mockResult5.reset();
+        mockResult5.expectedMinimumMessageCount(1);
+        mockResult5.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+
+        var routeController = context.getRouteController();
+        routeController.startRoute("route4");
+        routeController.startRoute("route1");
+
         generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
         MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
-        mockResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
 
-        // context.getRouteController().stopRoute("tempConsumerARoute");
+        Stream.concat(mockResult1.getReceivedExchanges().stream(), mockResult5.getReceivedExchanges().stream())
+                .forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
+
+        routeController.stopRoute("route4");
+        routeController.stopRoute("route1");
     }
 
     @Test
-    void when_rainConsumerBRoute_isStarted_shouldReceiveMessagesFromRainTopic() throws Exception {
-        int size = 10;
-        MockEndpoint mockResult2 = getMockEndpoint("mock:result2");
-        mockResult2.reset();
-        mockResult2.expectedMinimumMessageCount(1);
-        mockResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
+    void when_subscribingToAMissingTopic_theRouteShouldBeStopped_afterThrow() {
+        String MISSING_TOPIC_ROUTE_ID = "routeOfMissingTopic";
+        assertNull(context().getRoute(MISSING_TOPIC_ROUTE_ID));
 
-        // context.getRouteController().startRoute("rainConsumerBRoute");
-        generateDataPoints(RAIN_PATH, size, 3, 7.5);
-        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
-        mockResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC, size));
-        // context.getRouteController().stopRoute("tempConsumerBRoute");
+        assertThrows(
+                RuntimeCamelException.class,
+                () -> context.addRoutes(new RouteBuilder() {
+                    @Override
+                    public void configure() {
+                        from("iotdb-subscription:group_test_2:wrong_consumer?subscribeTo=" + MISSING_TOPIC)
+                                .routeId(MISSING_TOPIC_ROUTE_ID)
+                                .to("mock:fail");
+                    }
+                }));
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            var routeStatus = context.getRouteController().getRouteStatus(MISSING_TOPIC_ROUTE_ID);
+            assertNotNull(routeStatus);
+            assertTrue(routeStatus.isStopped());
+        });
     }
 
-    //    @Test
-    //    void when_aConsumerIsSubscribedToMultipleTopics_theMessagesShouldBeRoutedCorrectly() throws Exception {
-    //        int size = 10;
-    //        MockEndpoint mockMultiResult1 = getMockEndpoint("mock:result1");
-    //        mockMultiResult1.reset();
-    //        mockMultiResult1.expectedMinimumMessageCount(1);
-    //        mockMultiResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof
-    // SubscriptionMessage);
-    //
-    //        MockEndpoint mockMultiResult2 = getMockEndpoint("mock:result2");
-    //        mockMultiResult2.reset();
-    //        mockMultiResult2.expectedMinimumMessageCount(1);
-    //        mockMultiResult2.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof
-    // SubscriptionMessage);
-    //
-    //        //        var routeController = context.getRouteController();
-    //        //        routeController.startRoute("multiConsumerARouteA");
-    //        //        routeController.startRoute("multiConsumerARouteB");
-    //        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
-    //        generateDataPoints(RAIN_PATH, size, 3, 7.5);
-    //        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
-    //
-    //        mockMultiResult1.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange,
-    // TEMPERATURE_TOPIC, size));
-    //        mockMultiResult2.getReceivedExchanges().forEach(exchange -> assertFromExchange(exchange, RAIN_TOPIC,
-    // size));
-    //
-    //        //        routeController.stopRoute("multiConsumerARouteA");
-    //        //        routeController.stopRoute("multiConsumerARouteB");
-    //    }
-    //
-    //    @Test
-    //    void when_moreConsumersAreSubscribedToTheSameTopic_theMessagesShouldBeRoutedCorrectly() throws Exception {
-    //        int size = 10;
-    //        MockEndpoint result1 = getMockEndpoint("mock:result1");
-    //        result1.reset();
-    //        result1.expectedMinimumMessageCount(1);
-    //        result1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof SubscriptionMessage);
-    //
-    //        MockEndpoint mockMultiResult1 = getMockEndpoint("mock:multiResult1");
-    //        mockMultiResult1.reset();
-    //        mockMultiResult1.expectedMinimumMessageCount(1);
-    //        mockMultiResult1.expectedMessagesMatches(exchange -> exchange.getIn().getBody() instanceof
-    // SubscriptionMessage);
-    //
-    //        var routeController = context.getRouteController();
-    //        routeController.startRoute("tempConsumerARoute");
-    //        routeController.startRoute("multiConsumerARouteA");
-    //        generateDataPoints(TEMPERATURE_PATH, size, 20.5, 25.5);
-    //
-    //        MockEndpoint.assertIsSatisfied(context, 30, TimeUnit.SECONDS);
-    //        Stream.concat(result1.getReceivedExchanges().stream(), mockMultiResult1.getReceivedExchanges().stream())
-    //                .forEach(exchange -> assertFromExchange(exchange, TEMPERATURE_TOPIC, size));
-    //
-    //        routeController.stopRoute("tempConsumerARoute");
-    //        routeController.stopRoute("multiConsumerARouteA");
-    //    }
-    //
+    private void assertFromExchange(Exchange exchange, String topicName, long timeseriesCount) {
+        SubscriptionMessage message = exchange.getIn().getBody(SubscriptionMessage.class);
+        assertNotNull(message);
+        assertEquals(topicName, message.getCommitContext().getTopicName());
+        var rowCount = 0;
+        for (var sessionDataSet : message.getSessionDataSetsHandler()) {
+            while (sessionDataSet.hasNext()) {
+                RowRecord rowRecord = sessionDataSet.next();
+                System.out.println(rowRecord);
+                rowCount++;
+            }
+        }
+        assertTrue(rowCount >= timeseriesCount);
+        assertEquals(timeseriesCount, rowCount);
+    }
+
     //    @Test
     //    void when_droppingATopic_theRoutes_shouldBeStoppedSndThenRemoved() {
     //        context.getRoutes().forEach(route -> {
@@ -179,42 +228,4 @@ public class IoTDbConsumerEndpointTest extends IoTDBTestSupport {
     //            assertNull(context.getRoute("tempConsumerARoute"));
     //        });
     //    }
-    //
-    //    @Test
-    //    void onSubscriptionException_theRouteShouldBeRemoved() {
-    //        String MISSING_TOPIC_ROUTE_ID = "multiConsumerBRouteA";
-    //        assertNull(context().getRoute(MISSING_TOPIC_ROUTE_ID));
-    //
-    //        assertThrows(
-    //                RuntimeCamelException.class,
-    //                () -> context.addRoutes(new RouteBuilder() {
-    //                    @Override
-    //                    public void configure() {
-    //                        from("iotdb-subscription:" + MISSING_TOPIC + "?groupId=group_2&consumerId=multi_b")
-    //                                .routeId(MISSING_TOPIC_ROUTE_ID)
-    //                                .to("mock:fail");
-    //                    }
-    //                }));
-    //
-    //        Awaitility.await().atMost(Duration.ofSeconds(1)).untilAsserted(() -> {
-    //            var routeStatus = context.getRouteController().getRouteStatus(MISSING_TOPIC_ROUTE_ID);
-    //            assertNotNull(routeStatus);
-    //            assertTrue(routeStatus.isStopped());
-    //        });
-    //    }
-
-    private void assertFromExchange(Exchange exchange, String topicName, long timeseriesCount) {
-        SubscriptionMessage message = exchange.getIn().getBody(SubscriptionMessage.class);
-        assertNotNull(message);
-        assertEquals(topicName, message.getCommitContext().getTopicName());
-        var rowCount = 0;
-        for (var sessionDataSet : message.getSessionDataSetsHandler()) {
-            while (sessionDataSet.hasNext()) {
-                RowRecord rowRecord = sessionDataSet.next();
-                System.out.println(rowRecord);
-                rowCount++;
-            }
-        }
-        assertTrue(rowCount >= timeseriesCount);
-    }
 }

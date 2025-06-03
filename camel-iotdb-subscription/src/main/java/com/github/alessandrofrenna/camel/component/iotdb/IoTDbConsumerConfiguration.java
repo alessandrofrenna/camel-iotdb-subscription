@@ -28,6 +28,15 @@ import java.util.Objects;
  */
 public record IoTDbConsumerConfiguration(
         String consumerGroupId, String consumerId, long pollTimeoutMs, long heartbeatIntervalMs) {
+
+    /**
+     * Default record constructor. It validates the provided parameters.
+     *
+     * @param consumerGroupId is the group id
+     * @param consumerId is the id of the consumer
+     * @param pollTimeoutMs is the timeout to use with during poll
+     * @param heartbeatIntervalMs to ping IoTDb
+     */
     public IoTDbConsumerConfiguration {
         Objects.requireNonNull(consumerGroupId);
         Objects.requireNonNull(consumerId);

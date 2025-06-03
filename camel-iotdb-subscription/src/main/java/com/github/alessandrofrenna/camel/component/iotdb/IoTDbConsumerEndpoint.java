@@ -36,6 +36,10 @@ import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 import org.apache.camel.support.ScheduledPollEndpoint;
 
+/**
+ * The <b>IoTDbConsumerEndpoint</b> extend the camel {@link ScheduledPollEndpoint}.<br>
+ * It is used by camel to create the poll consumers of routes for {@link IoTDbSubscriptionComponent}
+ */
 @UriEndpoint(
         firstVersion = "0.0.1",
         scheme = "iotdb-subscription",
@@ -69,6 +73,12 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
     private IoTDbPollConsumer internalSharedConsumer;
     private final Lock internalSharedConsumerLock = new ReentrantLock();
 
+    /**
+     * Create an {@link IoTDbConsumerEndpoint} instance.
+     *
+     * @param endpointUri created by camel
+     * @param component instance
+     */
     public IoTDbConsumerEndpoint(String endpointUri, Component component) {
         super(endpointUri, component);
     }
@@ -197,6 +207,7 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
         try {
             if (internalSharedConsumer == null) {
                 internalSharedConsumer = new IoTDbPollConsumer(this, processor);
+                internalSharedConsumer.setTopics(extractAndGetTopics());
                 configureConsumer(internalSharedConsumer);
             }
             return new IoTDbPollConsumerDelegate(internalSharedConsumer);
@@ -205,6 +216,16 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
         } finally {
             internalSharedConsumerLock.unlock();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IOException per contract of {@link AutoCloseable} if {@link org.apache.camel.Service#stop()} fails
+     */
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 
     @Override
@@ -220,13 +241,7 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws IOException per contract of {@link AutoCloseable} if {@link org.apache.camel.Service#stop()} fails
-     */
-    @Override
-    public void close() throws IOException {
-        super.close();
+    private Set<String> extractAndGetTopics() {
+        return new HashSet<>(Arrays.asList(subscribeTo.split(",")));
     }
 }

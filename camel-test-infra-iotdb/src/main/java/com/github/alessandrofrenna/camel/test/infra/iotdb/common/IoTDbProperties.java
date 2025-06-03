@@ -17,32 +17,32 @@
 package com.github.alessandrofrenna.camel.test.infra.iotdb.common;
 
 /**
- * This class define the default configuration properties required for an IoTDB server instance to create a valid session.
+ * This class define the default configuration properties required for an IoTDb server instance to create a valid session.
  */
-public class IoTDBProperties {
+public class IoTDbProperties {
 
     /**
-     * The default IoTDB container property name
+     * The default IoTDb container property name
      */
     public static final String IOTDB_CONTAINER = "iotdb.container";
 
     /**
-     * The default IoTDB service address value property name
+     * The default IoTDb service address value property name
      */
     public static final String IOTDB_SERVICE_ADDRESS = "iotdb.service.address";
 
     /**
-     * The default IoTDB port property name
+     * The default IoTDb port property name
      */
     public static final String IOTDB_PORT = "iotdb.port";
 
     /**
-     * The default IoTDB host property name
+     * The default IoTDb host property name
      */
     public static final String IOTDB_HOST = "iotdb.host";
 
     /**
-     * The default IoTDB port property name
+     * The default IoTDb port property name
      */
     public static final int DEFAULT_PORT = 6667;
 }

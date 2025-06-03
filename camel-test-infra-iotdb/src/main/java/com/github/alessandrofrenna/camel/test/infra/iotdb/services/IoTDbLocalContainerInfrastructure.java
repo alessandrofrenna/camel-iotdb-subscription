@@ -16,10 +16,10 @@
  */
 package com.github.alessandrofrenna.camel.test.infra.iotdb.services;
 
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.DEFAULT_PORT;
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_HOST;
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_PORT;
-import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDBProperties.IOTDB_SERVICE_ADDRESS;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.DEFAULT_PORT;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.IOTDB_HOST;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.IOTDB_PORT;
+import static com.github.alessandrofrenna.camel.test.infra.iotdb.common.IoTDbProperties.IOTDB_SERVICE_ADDRESS;
 
 import org.apache.camel.spi.annotations.InfraService;
 import org.apache.camel.test.infra.common.services.ContainerService;
@@ -27,33 +27,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <b>IoTDBLocalContainerInfrastructure</b> is the default implementation of {@link IoTDBInfraService}.<br>
+ * The <b>IoTDbLocalContainerInfrastructure</b> is the default implementation of {@link IoTDbInfraService}.<br>
  * This class also implements the {@link ContainerService} interface.<br>
  * It is the infrastructure that will be used by camel to create the container for testing
  */
 @InfraService(
-        service = IoTDBInfraService.class,
-        description = "IoTDB is a database used to efficiently store data from iot devices",
+        service = IoTDbInfraService.class,
+        description = "IoTDb is a database used to efficiently store data from iot devices",
         serviceAlias = {"iotdb", "iotdb-service"})
-public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, ContainerService<IoTDBContainer> {
+public class IoTDbLocalContainerInfrastructure implements IoTDbInfraService, ContainerService<IoTDbContainer> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(IoTDBLocalContainerInfrastructure.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IoTDbLocalContainerInfrastructure.class);
 
-    private final IoTDBContainer container;
+    private final IoTDbContainer container;
 
     /**
-     * Default <b>IoTDBLocalContainerInfrastructure</b> constructor.
+     * Default <b>IoTDbLocalContainerInfrastructure</b> constructor.
      */
-    public IoTDBLocalContainerInfrastructure() {
-        container = new IoTDBContainer();
+    public IoTDbLocalContainerInfrastructure() {
+        container = new IoTDbContainer();
     }
 
     /**
-     * Create an <b>IoTDBLocalContainerInfrastructure</b> instance using the image name of the constructor.
+     * Create an <b>IoTDbLocalContainerInfrastructure</b> instance using the image name of the constructor.
      * @param imageName of the container.
      */
-    public IoTDBLocalContainerInfrastructure(String imageName) {
-        container = IoTDBContainer.initContainer(imageName, IoTDBContainer.CONTAINER_NAME);
+    public IoTDbLocalContainerInfrastructure(String imageName) {
+        container = IoTDbContainer.initContainer(imageName, IoTDbContainer.CONTAINER_NAME);
     }
 
     /**
@@ -71,10 +71,10 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
      */
     @Override
     public void initialize() {
-        LOG.info("Trying to start IoTDB container");
+        LOG.info("Trying to start IoTDb container");
         container.start();
         registerProperties();
-        LOG.info("IoTDB instance running at {}", getServiceAddress());
+        LOG.info("IoTDb instance running at {}", getServiceAddress());
     }
 
     /**
@@ -82,7 +82,7 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
      */
     @Override
     public void shutdown() {
-        LOG.info("Stopping IoTDB container");
+        LOG.info("Stopping IoTDb container");
         container.stop();
     }
 
@@ -91,7 +91,7 @@ public class IoTDBLocalContainerInfrastructure implements IoTDBInfraService, Con
      * @return the container instance
      */
     @Override
-    public IoTDBContainer getContainer() {
+    public IoTDbContainer getContainer() {
         return container;
     }
 

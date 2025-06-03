@@ -44,15 +44,15 @@ import org.slf4j.LoggerFactory;
 
 import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSessionConfiguration;
 import com.github.alessandrofrenna.camel.component.iotdb.IoTDbSubscriptionComponent;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBService;
-import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDBServiceFactory;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDbService;
+import com.github.alessandrofrenna.camel.test.infra.iotdb.services.IoTDbServiceFactory;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IoTDBTestSupport extends CamelTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(IoTDBTestSupport.class);
 
     @RegisterExtension
-    public static IoTDBService service = IoTDBServiceFactory.createService();
+    public static IoTDbService service = IoTDbServiceFactory.createService();
 
     private static final Properties properties = new Properties();
     private static final String TEST_OPTIONS_PROPERTIES = "/iotdb.properties";
