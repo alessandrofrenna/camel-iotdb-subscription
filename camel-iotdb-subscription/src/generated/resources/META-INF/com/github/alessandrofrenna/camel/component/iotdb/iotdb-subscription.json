@@ -11,7 +11,7 @@
     "supportLevel": "Preview",
     "groupId": "com.github.alessandrofrenna",
     "artifactId": "camel-iotdb-subscription",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "scheme": "iotdb-subscription",
     "extendsScheme": "",
     "syntax": "iotdb-subscription:consumerGroupId:consumerId",

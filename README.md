@@ -34,11 +34,11 @@ Add this to your dependencies:
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-iotdb-subscription</artifactId>
-        <version>0.0.5</version>
+        <version>0.0.6</version>
     </dependency>
 </dependencies>
 ```
-The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-iotdb-subscription/0.0.5/javadoc/) 
+The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-iotdb-subscription/0.0.6/javadoc/) 
 
 If you want to use the `camel-test-infra-iotb` add this to your dependencies:
 ```xml
@@ -48,20 +48,20 @@ If you want to use the `camel-test-infra-iotb` add this to your dependencies:
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
-        <version>0.0.5</version>
+        <version>0.0.6</version>
         <scope>test</scope>
     </dependency>
     
     <dependency>
         <groupId>com.github.alessandrofrenna.camel-iotdb-subscription</groupId>
         <artifactId>camel-test-infra-iotdb</artifactId>
-        <version>0.0.5</version>
+        <version>0.0.6</version>
         <type>test-jar</type>
         <scope>test</scope>
     </dependency>
 </dependencies>
 ```
-The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-test-infra-iotdb/0.0.5/javadoc/)
+The javadoc for this library is here: [javadoc](https://javadoc.jitpack.io/com/github/alessandrofrenna/camel-iotdb-subscription/camel-test-infra-iotdb/0.0.6/javadoc/)
 
 ### Gradle
 
@@ -79,14 +79,14 @@ dependencyResolutionManagement {
 Add this to your dependencies in `build.gradle`:
 ```
 dependencies {
-        implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:0.0.5'
+        implementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-iotdb-subscription:0.0.6'
 }
 ```
 
 If you want to use the `camel-test-infra-iotb` add this to your dependencies:
 ```
 dependencies {
-        testImplementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-test-infra-iotdb:0.0.5'
+        testImplementation 'com.github.alessandrofrenna.camel-iotdb-subscription:camel-test-infra-iotdb:0.0.6'
 }
 ```
 
