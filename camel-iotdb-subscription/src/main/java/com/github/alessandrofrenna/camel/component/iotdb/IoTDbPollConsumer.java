@@ -125,20 +125,20 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     }
 
     @Override
-    protected int poll() {
+    protected int poll() throws Exception {
         final Set<String> topicsSnapshot = Set.copyOf(topics);
         if (topicsSnapshot.isEmpty()) {
             return 0;
         }
         LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topicsSnapshot);
         List<SubscriptionMessage> messages = pollMessages(topicsSnapshot, endpoint.getPollTimeoutMs());
-        processMessages(messages);
-        //        Set<SubscriptionMessage> ackableMessages = processMessages(messages);
-        //        if (!ackableMessages.isEmpty()) {
-        //            pullConsumer.commitSync(ackableMessages);
-        //            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
-        //        }
-        // unsubscribeAndCloseConsumer(pullConsumer, topicsSnapshot);
+        Set<SubscriptionMessage> ackableMessages = processMessages(messages);
+        if (!ackableMessages.isEmpty()) {
+            pullConsumer.commitSync(ackableMessages);
+            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
+            return ackableMessages.size();
+        }
+        processEmptyMessage();
         return messages.size();
     }
 
@@ -161,7 +161,6 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
         List<SubscriptionMessage> messages = Collections.emptyList();
         try {
             messages = pullConsumer.poll(topics, pollTimeout);
-            pullConsumer.commitSync(Set.copyOf(messages));
         } catch (SubscriptionException e) {
             LOG.error("SubscriptionPullConsumer poll failed: {}", e.getMessage());
         }
