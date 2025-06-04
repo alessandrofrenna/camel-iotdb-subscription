@@ -27,6 +27,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.support.ScheduledPollConsumer;
 import org.apache.iotdb.rpc.subscription.exception.SubscriptionException;
+import org.apache.iotdb.session.subscription.consumer.ISubscriptionTablePullConsumer;
 import org.apache.iotdb.session.subscription.consumer.ISubscriptionTreePullConsumer;
 import org.apache.iotdb.session.subscription.consumer.tree.SubscriptionTreePullConsumerBuilder;
 import org.apache.iotdb.session.subscription.payload.SubscriptionMessage;
@@ -35,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The <b>IoTDbTopicPollConsumer</b> extends the camel {@link ScheduledPollConsumer}. <br> It is used to create a
- * {@link ISubscriptionTreePullConsumer} used to get messages from an IoTDb topics after subscription.<br>
+ * {@link ISubscriptionTablePullConsumer} used to get messages from an IoTDb topics after subscription.<br>
  */
 class IoTDbPollConsumer extends ScheduledPollConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(IoTDbPollConsumer.class);
@@ -87,21 +88,8 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
         pullConsumer = createPullConsumer(sessionCfg, consumerCfg);
         pullConsumer.open();
         super.doStart();
-        LOG.debug("SubscriptionPullConsumer created and opened");
-
-        if (topics.isEmpty()) {
-            LOG.info("SubscriptionPullConsumer consumer started. No IoTDb topics to subscribe to provided");
-            return;
-        }
-
-        try {
-            LOG.debug("SubscriptionPullConsumer subscribing to: {}", topics);
-            pullConsumer.subscribe(topics);
-            LOG.info("SubscriptionPullConsumer consumer started. IoTDb topics subscribed to: {}", topics);
-        } catch (Exception e) {
-            String message = String.format("SubscriptionPullConsumer#subscribe call failed: %s", e.getMessage());
-            doFail(new RuntimeCamelException(message, e));
-        }
+        LOG.debug("PullConsumer created and opened");
+        subscribeToTopics(pullConsumer, topics);
     }
 
     @Override
@@ -110,15 +98,13 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
             super.doStop();
             return;
         }
-        LOG.debug("Stopping SubscriptionPullConsumer");
+        LOG.debug("Closing PullConsumer");
+        unsubscribeFromTopics(pullConsumer, topics);
         try {
-            LOG.debug("SubscriptionPullConsumer unsubscribing from: {}", topics);
-            pullConsumer.unsubscribe(topics);
             pullConsumer.close();
-            LOG.info("SubscriptionPullConsumer unsubscribed from: {}", topics);
-            LOG.info("SubscriptionPullConsumer closed");
-        } catch (SubscriptionException e) {
-            LOG.error("SubscriptionPullConsumer#unsubscribe failed: {}", e.getMessage());
+            LOG.info("PullConsumer closed");
+        } catch (Exception e) {
+            LOG.error("PullConsumer close failed: {}", e.getMessage());
         }
         pullConsumer = null;
         super.doStop();
@@ -127,19 +113,54 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     @Override
     protected int poll() throws Exception {
         final Set<String> topicsSnapshot = Set.copyOf(topics);
-        if (topicsSnapshot.isEmpty()) {
+        if (isStoppingOrStopped() || topicsSnapshot.isEmpty()) {
+            processEmptyMessage();
             return 0;
         }
-        LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topicsSnapshot);
+
+        subscribeToTopics(pullConsumer, topicsSnapshot);
         List<SubscriptionMessage> messages = pollMessages(topicsSnapshot, endpoint.getPollTimeoutMs());
         Set<SubscriptionMessage> ackableMessages = processMessages(messages);
-        if (!ackableMessages.isEmpty()) {
-            pullConsumer.commitSync(ackableMessages);
-            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
-            return ackableMessages.size();
+
+        if (ackableMessages.isEmpty()) {
+            processEmptyMessage();
+            return 0;
         }
-        processEmptyMessage();
-        return messages.size();
+
+        pullConsumer.commitSync(ackableMessages);
+        LOG.info("PullConsumer acknowledged messages: #{}", ackableMessages.size());
+        unsubscribeFromTopics(pullConsumer, topicsSnapshot);
+        return ackableMessages.size();
+    }
+
+    private void subscribeToTopics(ISubscriptionTreePullConsumer pullConsumer, Set<String> topics) {
+        if (topics.isEmpty()) {
+            LOG.info("PullConsumer consumer started. No IoTDb topics to subscribe to provided");
+            return;
+        }
+
+        try {
+            LOG.debug("PullConsumer subscribing to: {}", topics);
+            pullConsumer.subscribe(topics);
+            LOG.info("PullConsumer consumer started. IoTDb topics subscribed to: {}", topics);
+        } catch (Exception e) {
+            String message = String.format("SubscriptionPullConsumer#subscribe call failed: %s", e.getMessage());
+            doFail(new RuntimeCamelException(message, e));
+        }
+    }
+
+    private void unsubscribeFromTopics(ISubscriptionTreePullConsumer pullConsumer, Set<String> topics) {
+        if (topics.isEmpty()) {
+            LOG.info("PullConsumer unsubscribe won't be called with empty topic set");
+            return;
+        }
+        try {
+            LOG.debug("PullConsumer unsubscribing from: {}", topics);
+            pullConsumer.unsubscribe(topics);
+            LOG.info("PullConsumer unsubscribed from: {}", topics);
+        } catch (SubscriptionException e) {
+            LOG.error("PullConsumer unsubscribe failed: {}", e.getMessage());
+        }
     }
 
     private ISubscriptionTreePullConsumer createPullConsumer(
@@ -158,13 +179,14 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
     }
 
     private List<SubscriptionMessage> pollMessages(Set<String> topics, long pollTimeout) {
+        LOG.info("PullConsumer polling from IoTDb topics: {}", topics);
         List<SubscriptionMessage> messages = Collections.emptyList();
         try {
             messages = pullConsumer.poll(topics, pollTimeout);
         } catch (SubscriptionException e) {
-            LOG.error("SubscriptionPullConsumer poll failed: {}", e.getMessage());
+            LOG.error("PullConsumer poll failed: {}", e.getMessage());
         }
-        LOG.info("SubscriptionPullConsumer poll succeeded. Total received messages: #{}", messages.size());
+        LOG.info("PullConsumer poll succeeded. Total received messages: #{}", messages.size());
         return messages;
     }
 
