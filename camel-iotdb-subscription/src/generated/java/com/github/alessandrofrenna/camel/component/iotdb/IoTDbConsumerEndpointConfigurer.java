@@ -41,8 +41,6 @@ public class IoTDbConsumerEndpointConfigurer extends PropertyConfigurerSupport i
         case "heartbeatIntervalMs": target.setHeartbeatIntervalMs(property(camelContext, java.lang.Long.class, value)); return true;
         case "initialdelay":
         case "initialDelay": target.setInitialDelay(property(camelContext, long.class, value)); return true;
-        case "lazystartproducer":
-        case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "pollstrategy":
         case "pollStrategy": target.setPollStrategy(property(camelContext, org.apache.camel.spi.PollingConsumerPollStrategy.class, value)); return true;
         case "polltimeoutms":
@@ -91,8 +89,6 @@ public class IoTDbConsumerEndpointConfigurer extends PropertyConfigurerSupport i
         case "heartbeatIntervalMs": return java.lang.Long.class;
         case "initialdelay":
         case "initialDelay": return long.class;
-        case "lazystartproducer":
-        case "lazyStartProducer": return boolean.class;
         case "pollstrategy":
         case "pollStrategy": return org.apache.camel.spi.PollingConsumerPollStrategy.class;
         case "polltimeoutms":
@@ -142,8 +138,6 @@ public class IoTDbConsumerEndpointConfigurer extends PropertyConfigurerSupport i
         case "heartbeatIntervalMs": return target.getHeartbeatIntervalMs();
         case "initialdelay":
         case "initialDelay": return target.getInitialDelay();
-        case "lazystartproducer":
-        case "lazyStartProducer": return target.isLazyStartProducer();
         case "pollstrategy":
         case "pollStrategy": return target.getPollStrategy();
         case "polltimeoutms":

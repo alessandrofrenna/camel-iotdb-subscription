@@ -44,7 +44,8 @@ import org.apache.camel.support.ScheduledPollEndpoint;
         scheme = "iotdb-subscription",
         title = "IoTDbTopicSubscribeEndpoint",
         syntax = "iotdb-subscription:consumerGroupId:consumerId",
-        category = {Category.IOT})
+        category = {Category.IOT},
+        consumerOnly = true)
 public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
 
     @UriPath(name = "consumerGroupId", description = "The consumer group id that contains the topic consumer")
@@ -134,8 +135,13 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
      */
     public void setSubscribeTo(String subscribeTo) {
         this.subscribeTo = subscribeTo;
-        if (internalSharedConsumer != null) {
-            internalSharedConsumer.setTopics(new HashSet<>(Arrays.asList(subscribeTo.split(","))));
+        internalSharedConsumerLock.lock();
+        try {
+            if (internalSharedConsumer != null) {
+                internalSharedConsumer.setTopics(extractAndGetTopics(subscribeTo));
+            }
+        } finally {
+            internalSharedConsumerLock.unlock();
         }
     }
 
@@ -190,7 +196,7 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
      */
     @Override
     public Producer createProducer() {
-        throw new UnsupportedOperationException("");
+        throw new UnsupportedOperationException("createProducer is not supported");
     }
 
     /**
@@ -205,7 +211,7 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
         try {
             if (internalSharedConsumer == null) {
                 internalSharedConsumer = new IoTDbPollConsumer(this, processor);
-                internalSharedConsumer.setTopics(extractAndGetTopics());
+                internalSharedConsumer.setTopics(extractAndGetTopics(getSubscribeTo()));
                 configureConsumer(internalSharedConsumer);
             }
             return new IoTDbPollConsumerDelegate(internalSharedConsumer);
@@ -224,13 +230,8 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
     @Override
     public void close() throws IOException {
         super.close();
-    }
-
-    @Override
-    protected void doStop() {
         internalSharedConsumerLock.lock();
         try {
-            internalSharedConsumer.stop();
             if (internalSharedConsumer.isStoppingOrStopped()) {
                 internalSharedConsumer = null;
             }
@@ -239,7 +240,17 @@ public class IoTDbConsumerEndpoint extends ScheduledPollEndpoint {
         }
     }
 
-    private Set<String> extractAndGetTopics() {
-        return new HashSet<>(Arrays.asList(subscribeTo.split(",")));
+    @Override
+    protected void doStop() {
+        internalSharedConsumerLock.lock();
+        try {
+            internalSharedConsumer.stop();
+        } finally {
+            internalSharedConsumerLock.unlock();
+        }
+    }
+
+    private Set<String> extractAndGetTopics(String subscribeTo) {
+        return new HashSet<>(Arrays.asList(this.subscribeTo.split(",")));
     }
 }

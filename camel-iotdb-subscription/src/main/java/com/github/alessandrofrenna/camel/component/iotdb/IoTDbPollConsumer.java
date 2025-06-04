@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
@@ -39,11 +38,11 @@ import org.slf4j.LoggerFactory;
  * {@link ISubscriptionTreePullConsumer} used to get messages from an IoTDb topics after subscription.<br>
  */
 class IoTDbPollConsumer extends ScheduledPollConsumer {
+    private static final Logger LOG = LoggerFactory.getLogger(IoTDbPollConsumer.class);
     private static final String TOPIC_HEADER_NAME = "topic";
-    private final Logger LOG = LoggerFactory.getLogger(IoTDbPollConsumer.class);
+
     private final IoTDbConsumerEndpoint endpoint;
     private final Set<String> topics = new CopyOnWriteArraySet<>();
-    private final ReentrantLock defaultLock = new ReentrantLock();
     private ISubscriptionTreePullConsumer pullConsumer;
 
     /**
@@ -71,37 +70,8 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
      * @param topics to subscribe to
      */
     public void setTopics(Set<String> topics) {
-        defaultLock.lock();
-        try {
-            if (isStarted() && pullConsumer != null) {
-                // call unsubscribe with the value of this.topics before its update
-                // this will remove the subscribed topics that are not inside the
-                // updated version of topics provided to this method
-                pullConsumer.unsubscribe(this.topics);
-                // subscribe to the updated topics
-                pullConsumer.subscribe(topics);
-            }
-        } finally {
-            defaultLock.unlock();
-        }
-
         this.topics.clear();
         this.topics.addAll(topics);
-    }
-
-    protected ISubscriptionTreePullConsumer createPullConsumer(
-            IoTDbSessionConfiguration sessionCfg, IoTDbConsumerConfiguration consumerCfg) {
-        return new SubscriptionTreePullConsumerBuilder()
-                .host(sessionCfg.host())
-                .port(sessionCfg.port())
-                .username(sessionCfg.user())
-                .password(sessionCfg.password())
-                .consumerGroupId(consumerCfg.consumerGroupId())
-                .consumerId(consumerCfg.consumerId())
-                .heartbeatIntervalMs(consumerCfg.heartbeatIntervalMs())
-                .autoCommit(false)
-                .maxPollParallelism(Runtime.getRuntime().availableProcessors() / 2)
-                .buildPullConsumer();
     }
 
     @Override
@@ -114,9 +84,9 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
                 endpoint.getPollTimeoutMs(),
                 endpoint.getHeartbeatIntervalMs());
 
-        super.doStart();
         pullConsumer = createPullConsumer(sessionCfg, consumerCfg);
         pullConsumer.open();
+        super.doStart();
         LOG.debug("SubscriptionPullConsumer created and opened");
 
         if (topics.isEmpty()) {
@@ -156,32 +126,46 @@ class IoTDbPollConsumer extends ScheduledPollConsumer {
 
     @Override
     protected int poll() {
-        if (topics.isEmpty()) {
+        final Set<String> topicsSnapshot = Set.copyOf(topics);
+        if (topicsSnapshot.isEmpty()) {
             return 0;
         }
-
-        LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topics);
-        List<SubscriptionMessage> messages = pollMessages(endpoint.getPollTimeoutMs());
-        Set<SubscriptionMessage> ackableMessages = processMessages(messages);
-        if (!ackableMessages.isEmpty()) {
-            pullConsumer.commitSync(ackableMessages);
-            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
-            return ackableMessages.size();
-        }
+        LOG.info("SubscriptionPullConsumer polling from IoTDb topics: {}", topicsSnapshot);
+        List<SubscriptionMessage> messages = pollMessages(topicsSnapshot, endpoint.getPollTimeoutMs());
+        processMessages(messages);
+        //        Set<SubscriptionMessage> ackableMessages = processMessages(messages);
+        //        if (!ackableMessages.isEmpty()) {
+        //            pullConsumer.commitSync(ackableMessages);
+        //            LOG.info("SubscriptionPullConsumer acknowledged messages: #{}", ackableMessages.size());
+        //        }
+        // unsubscribeAndCloseConsumer(pullConsumer, topicsSnapshot);
         return messages.size();
     }
 
-    private List<SubscriptionMessage> pollMessages(long pollTimeout) {
+    private ISubscriptionTreePullConsumer createPullConsumer(
+            IoTDbSessionConfiguration sessionCfg, IoTDbConsumerConfiguration consumerCfg) {
+        return new SubscriptionTreePullConsumerBuilder()
+                .host(sessionCfg.host())
+                .port(sessionCfg.port())
+                .username(sessionCfg.user())
+                .password(sessionCfg.password())
+                .consumerGroupId(consumerCfg.consumerGroupId())
+                .consumerId(consumerCfg.consumerId())
+                .heartbeatIntervalMs(consumerCfg.heartbeatIntervalMs())
+                .autoCommit(false)
+                .maxPollParallelism(Runtime.getRuntime().availableProcessors() / 2)
+                .buildPullConsumer();
+    }
+
+    private List<SubscriptionMessage> pollMessages(Set<String> topics, long pollTimeout) {
         List<SubscriptionMessage> messages = Collections.emptyList();
-        defaultLock.lock();
         try {
-            messages = pullConsumer.poll(pollTimeout);
+            messages = pullConsumer.poll(topics, pollTimeout);
+            pullConsumer.commitSync(Set.copyOf(messages));
         } catch (SubscriptionException e) {
-            LOG.error("SubscriptionPullConsumer#poll failed: {}", e.getMessage());
-        } finally {
-            defaultLock.unlock();
+            LOG.error("SubscriptionPullConsumer poll failed: {}", e.getMessage());
         }
-        LOG.info("SubscriptionPullConsumer#poll total received messages: #{}", messages.size());
+        LOG.info("SubscriptionPullConsumer poll succeeded. Total received messages: #{}", messages.size());
         return messages;
     }
 

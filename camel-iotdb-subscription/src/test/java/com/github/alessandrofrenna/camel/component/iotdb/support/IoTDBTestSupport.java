@@ -93,6 +93,7 @@ public class IoTDBTestSupport extends CamelTestSupport {
             doInSubscriptionSession((ISubscriptionTreeSession session) -> {
                 Properties props = new Properties();
                 props.setProperty(TopicConstant.PATH_KEY, path);
+                props.setProperty(TopicConstant.MODE_KEY, TopicConstant.MODE_LIVE_VALUE);
                 props.setProperty(TopicConstant.FORMAT_KEY, TopicConstant.FORMAT_SESSION_DATA_SETS_HANDLER_VALUE);
                 session.createTopicIfNotExists(topicName, props);
                 LOG.debug("Created topic '{}' for path: '{}'", topicName, path);

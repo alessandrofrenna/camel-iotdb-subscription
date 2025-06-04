@@ -32,8 +32,6 @@ public class IoTDbSubscriptionComponentConfigurer extends PropertyConfigurerSupp
         case "healthcheckproducerenabled":
         case "healthCheckProducerEnabled": target.setHealthCheckProducerEnabled(property(camelContext, boolean.class, value)); return true;
         case "host": target.setHost(property(camelContext, java.lang.String.class, value)); return true;
-        case "lazystartproducer":
-        case "lazyStartProducer": target.setLazyStartProducer(property(camelContext, boolean.class, value)); return true;
         case "password": target.setPassword(property(camelContext, java.lang.String.class, value)); return true;
         case "port": target.setPort(property(camelContext, Integer.class, value)); return true;
         case "user": target.setUser(property(camelContext, java.lang.String.class, value)); return true;
@@ -53,8 +51,6 @@ public class IoTDbSubscriptionComponentConfigurer extends PropertyConfigurerSupp
         case "healthcheckproducerenabled":
         case "healthCheckProducerEnabled": return boolean.class;
         case "host": return java.lang.String.class;
-        case "lazystartproducer":
-        case "lazyStartProducer": return boolean.class;
         case "password": return java.lang.String.class;
         case "port": return Integer.class;
         case "user": return java.lang.String.class;
@@ -75,8 +71,6 @@ public class IoTDbSubscriptionComponentConfigurer extends PropertyConfigurerSupp
         case "healthcheckproducerenabled":
         case "healthCheckProducerEnabled": return target.isHealthCheckProducerEnabled();
         case "host": return target.getHost();
-        case "lazystartproducer":
-        case "lazyStartProducer": return target.isLazyStartProducer();
         case "password": return target.getPassword();
         case "port": return target.getPort();
         case "user": return target.getUser();
