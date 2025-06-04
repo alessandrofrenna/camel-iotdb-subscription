@@ -3,7 +3,7 @@
 
     <groupId>com.github.alessandrofrenna</groupId>
     <artifactId>camel-iotdb-subscription-parent</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5</version>
     <url>https://github.com/alessandrofrenna/camel-iotdb-subscription</url>
 
     <packaging>pom</packaging>
